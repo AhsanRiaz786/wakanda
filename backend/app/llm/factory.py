@@ -44,16 +44,23 @@ def _build_provider() -> "LLMProvider":
     if use_mock:
         return MockLLMProvider()
 
-    # Agent A fills this branch — stub raises clearly until then
     try:
-        from app.llm.gemini_provider import GeminiLLMProvider  # noqa: PLC0415
+        from app.llm.groq_provider import GroqLLMProvider  # noqa: PLC0415
 
+        if settings.groq_api_key:
+            return GroqLLMProvider(
+                model=settings.llm_model,
+                api_key=settings.groq_api_key,
+            )
+            
+        # Fallback to Gemini if groq_api_key not present
+        from app.llm.gemini_provider import GeminiLLMProvider  # noqa: PLC0415
         return GeminiLLMProvider(
             model=settings.llm_model,
             api_key=settings.google_api_key,
         )
     except ImportError:
-        # gemini_provider.py not yet created (Wave 0) — fall back safely
+        # provider files not yet created or dependencies missing — fall back safely
         return MockLLMProvider()
 
 
