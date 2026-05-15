@@ -6,7 +6,6 @@ Existing backend code is never imported or modified.
 
 from __future__ import annotations
 
-import base64
 import json
 import logging
 from typing import Any
@@ -56,6 +55,7 @@ End with a short follow-up question if appropriate."""
 # Step 1: STT — Deepgram
 # ---------------------------------------------------------------------------
 
+
 async def transcribe(audio_bytes: bytes, mimetype: str = "audio/wav") -> str:
     """Send audio to Deepgram nova-2 and return transcript text."""
     url = "https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&language=en"
@@ -83,6 +83,7 @@ async def transcribe(audio_bytes: bytes, mimetype: str = "audio/wav") -> str:
 # ---------------------------------------------------------------------------
 # Step 2: Intent parsing — Groq
 # ---------------------------------------------------------------------------
+
 
 async def parse_intent(transcript: str) -> dict[str, Any]:
     """Ask Groq to extract intent + params from the transcript."""
@@ -117,6 +118,7 @@ async def parse_intent(transcript: str) -> dict[str, Any]:
 # Step 3: Dispatch to existing CityIRA flows
 # ---------------------------------------------------------------------------
 
+
 def dispatch_intent(intent: str, params: dict[str, Any]) -> dict[str, Any]:
     """Route intent to the correct existing flow function.
 
@@ -131,6 +133,7 @@ def dispatch_intent(intent: str, params: dict[str, Any]) -> dict[str, Any]:
             return {"error": "No incident description captured"}
 
         from app.models.enums import SourceType  # noqa: PLC0415
+
         req = IngestRequest(
             rawDescription=raw_desc,
             sourceType=SourceType.REALTIME_FEED,
@@ -168,9 +171,7 @@ def dispatch_intent(intent: str, params: dict[str, Any]) -> dict[str, Any]:
                 return {"error": "No plan found to simulate. Please run a plan first."}
             plan_id = plans[-1]
 
-        overrides = SimulateOverrides(
-            forceApiFailure=bool(params.get("forceApiFailure", False))
-        )
+        overrides = SimulateOverrides(forceApiFailure=bool(params.get("forceApiFailure", False)))
         req = SimulateRequest(planId=plan_id, simulationSpeed="fast", overrides=overrides)
         try:
             run, trace = run_simulate(store, req)
@@ -205,12 +206,15 @@ def dispatch_intent(intent: str, params: dict[str, Any]) -> dict[str, Any]:
         }
 
     # unknown
-    return {"message": "Command not recognised. Try reporting an incident, running a plan, or checking status."}
+    return {
+        "message": "Command not recognised. Try reporting an incident, running a plan, or checking status."
+    }
 
 
 # ---------------------------------------------------------------------------
 # Step 4: Summarise response — Groq (fast 8b model)
 # ---------------------------------------------------------------------------
+
 
 async def summarise(response_dict: dict[str, Any]) -> str:
     """Convert the raw dispatch result dict into a single spoken sentence."""
@@ -240,6 +244,7 @@ async def summarise(response_dict: dict[str, Any]) -> str:
 # Step 5: TTS — ElevenLabs
 # ---------------------------------------------------------------------------
 
+
 async def synthesise(text: str) -> bytes:
     """Convert summary text to MP3 audio via ElevenLabs free-tier voice."""
     # Rachel voice — available on ElevenLabs free tier
@@ -251,18 +256,19 @@ async def synthesise(text: str) -> bytes:
     }
     body = {
         "text": text,
-        "model_id": "eleven_turbo_v2",       # Lowest latency model on free tier
+        "model_id": "eleven_monolingual_v1",
         "voice_settings": {"stability": 0.5, "similarity_boost": 0.75},
     }
     async with httpx.AsyncClient(timeout=20.0) as client:
         resp = await client.post(url, headers=headers, json=body)
         resp.raise_for_status()
-        return resp.content                   # raw MP3 bytes
+        return resp.content  # raw MP3 bytes
 
 
 # ---------------------------------------------------------------------------
 # Utility: guard missing API keys before any call
 # ---------------------------------------------------------------------------
+
 
 def check_voice_keys() -> list[str]:
     """Return list of missing API key names. Empty = all present."""

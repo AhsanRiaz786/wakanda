@@ -6,9 +6,9 @@ Provides shared retry and error-handling logic across LLM providers.
 import logging
 from typing import Callable, TypeVar
 
-logger = logging.getLogger(__name__)
-
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 

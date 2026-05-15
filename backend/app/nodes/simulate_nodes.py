@@ -11,7 +11,7 @@ from app.flows import simulate_flow
 from app.models.enums import TraceStepStatus, TraceStepType
 from app.models.plan import PlanSummary
 from app.models.requests import SimulateRequest
-from app.models.simulation import CityState, FailureRecord, SimulatedAction, SimulationRun
+from app.models.simulation import CityState, SimulationRun
 from app.services.trace_builder import append_step
 from app.state.workspace import get_store
 
@@ -23,8 +23,8 @@ class SimulateState(TypedDict, total=False):
     plan: Optional[PlanSummary]
     before_state: Optional[CityState]
     after_state: Optional[CityState]
-    actions: list                      # list[SimulatedAction]
-    failures: list                     # list[FailureRecord]
+    actions: list  # list[SimulatedAction]
+    failures: list  # list[FailureRecord]
     metrics: dict
     frames: list
     started_at: Optional[str]
@@ -37,6 +37,7 @@ class SimulateState(TypedDict, total=False):
 # ---------------------------------------------------------------------------
 # Node: load_plan  →  SIM01
 # ---------------------------------------------------------------------------
+
 
 def load_plan(state: SimulateState) -> SimulateState:
     store = get_store()
@@ -69,6 +70,7 @@ def load_plan(state: SimulateState) -> SimulateState:
 # Node: capture_before  →  SIM02
 # ---------------------------------------------------------------------------
 
+
 def capture_before(state: SimulateState) -> SimulateState:
     store = get_store()
     before = simulate_flow.capture_before_state(store)
@@ -78,6 +80,7 @@ def capture_before(state: SimulateState) -> SimulateState:
 # ---------------------------------------------------------------------------
 # Node: execute_chains  →  SIM03
 # ---------------------------------------------------------------------------
+
 
 def execute_chains(state: SimulateState) -> SimulateState:
     store = get_store()
@@ -100,13 +103,10 @@ def execute_chains(state: SimulateState) -> SimulateState:
 # Node: inject_failure  →  SIM-FAIL
 # ---------------------------------------------------------------------------
 
+
 def inject_failure(state: SimulateState) -> SimulateState:
     plan: PlanSummary = state["plan"]
-    force_fail = (
-        state["request"].overrides.forceApiFailure
-        if state["request"].overrides
-        else False
-    )
+    force_fail = state["request"].overrides.forceApiFailure if state["request"].overrides else False
     trace: list = list(state.get("trace_steps") or [])
 
     failures = simulate_flow.inject_failure_and_retry(plan, force_fail)
@@ -127,6 +127,7 @@ def inject_failure(state: SimulateState) -> SimulateState:
 # Node: capture_after  →  SIM04
 # ---------------------------------------------------------------------------
 
+
 def capture_after(state: SimulateState) -> SimulateState:
     store = get_store()
     after = simulate_flow.capture_after_state(store)
@@ -136,6 +137,7 @@ def capture_after(state: SimulateState) -> SimulateState:
 # ---------------------------------------------------------------------------
 # Node: compute_metrics  →  SIM05
 # ---------------------------------------------------------------------------
+
 
 def compute_metrics(state: SimulateState) -> SimulateState:
     before: CityState = state["before_state"]
@@ -148,6 +150,7 @@ def compute_metrics(state: SimulateState) -> SimulateState:
 # ---------------------------------------------------------------------------
 # Node: build_frames  →  SIM06
 # ---------------------------------------------------------------------------
+
 
 def build_frames(state: SimulateState) -> SimulateState:
     before: CityState = state["before_state"]
@@ -162,6 +165,7 @@ def build_frames(state: SimulateState) -> SimulateState:
 # ---------------------------------------------------------------------------
 # Node: persist_sim  →  SIM07
 # ---------------------------------------------------------------------------
+
 
 def persist_sim(state: SimulateState) -> SimulateState:
     store = get_store()

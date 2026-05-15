@@ -29,8 +29,6 @@ class LLMProvider(Protocol):
         """
         ...
 
-    def draft_notifications(
-        self, incident_id: str, incident_type: str
-    ) -> NotificationDrafts:
+    def draft_notifications(self, incident_id: str, incident_type: str) -> NotificationDrafts:
         """Draft operator / public / department notifications (plan.md §4.10.5)."""
         ...

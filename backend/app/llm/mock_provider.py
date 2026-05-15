@@ -115,9 +115,7 @@ class MockLLMProvider:
     # draft_notifications
     # ------------------------------------------------------------------
 
-    def draft_notifications(
-        self, incident_id: str, incident_type: str
-    ) -> NotificationDrafts:
+    def draft_notifications(self, incident_id: str, incident_type: str) -> NotificationDrafts:
         return NotificationDrafts(
             operator_alert=(
                 f"INCIDENT {incident_id}: {incident_type.upper()} — "

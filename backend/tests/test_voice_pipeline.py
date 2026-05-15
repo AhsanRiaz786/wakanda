@@ -7,8 +7,6 @@ because they require live API keys. Instead we test:
   • summarise fallback — error passthrough and message passthrough
 """
 
-import pytest
-
 from app.services.voice_pipeline import dispatch_intent, check_voice_keys
 
 
@@ -19,10 +17,13 @@ from app.services.voice_pipeline import dispatch_intent, check_voice_keys
 
 class TestDispatchIngest:
     def test_ingest_creates_incident(self, fresh_store):
-        result = dispatch_intent("ingest", {
-            "rawDescription": "Water main burst near Market Quarter causing significant flooding",
-            "rawAddress": "Market Quarter",
-        })
+        result = dispatch_intent(
+            "ingest",
+            {
+                "rawDescription": "Water main burst near Market Quarter causing significant flooding",
+                "rawAddress": "Market Quarter",
+            },
+        )
         assert "incidentId" in result
         assert result["incidentId"] is not None
         assert result["isDuplicate"] is False
@@ -120,9 +121,12 @@ class TestDispatchStatus:
     def test_status_caps_at_5_incidents(self, seeded_store):
         # Add more incidents beyond the 5 already seeded
         for i in range(3):
-            dispatch_intent("ingest", {
-                "rawDescription": f"Additional test incident number {i} for overflow testing purposes",
-            })
+            dispatch_intent(
+                "ingest",
+                {
+                    "rawDescription": f"Additional test incident number {i} for overflow testing purposes",
+                },
+            )
         result = dispatch_intent("status", {})
         # Should cap at 5 incidents in the response
         assert len(result["incidents"]) <= 5
@@ -137,7 +141,10 @@ class TestDispatchUnknown:
     def test_unknown_intent_returns_message(self, fresh_store):
         result = dispatch_intent("unknown", {})
         assert "message" in result
-        assert "not recognised" in result["message"].lower() or "not recognized" in result["message"].lower()
+        assert (
+            "not recognised" in result["message"].lower()
+            or "not recognized" in result["message"].lower()
+        )
 
     def test_garbage_intent_returns_message(self, fresh_store):
         result = dispatch_intent("xyzzy_nonsense", {})
@@ -152,6 +159,7 @@ class TestDispatchUnknown:
 class TestCheckVoiceKeys:
     def test_all_keys_present(self, monkeypatch):
         from app.config import settings
+
         monkeypatch.setattr(settings, "deepgram_api_key", "dk_test")
         monkeypatch.setattr(settings, "groq_api_key", "gk_test")
         monkeypatch.setattr(settings, "elevenlabs_api_key", "ek_test")
@@ -160,6 +168,7 @@ class TestCheckVoiceKeys:
 
     def test_deepgram_missing(self, monkeypatch):
         from app.config import settings
+
         monkeypatch.setattr(settings, "deepgram_api_key", "")
         monkeypatch.setattr(settings, "groq_api_key", "gk_test")
         monkeypatch.setattr(settings, "elevenlabs_api_key", "ek_test")
@@ -168,6 +177,7 @@ class TestCheckVoiceKeys:
 
     def test_all_keys_missing(self, monkeypatch):
         from app.config import settings
+
         monkeypatch.setattr(settings, "deepgram_api_key", "")
         monkeypatch.setattr(settings, "groq_api_key", "")
         monkeypatch.setattr(settings, "elevenlabs_api_key", "")

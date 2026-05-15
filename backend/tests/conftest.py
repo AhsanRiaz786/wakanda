@@ -17,7 +17,7 @@ from app.bootstrap import DEMO_SAMPLES
 from app.flows.ingest_flow import run_ingest
 from app.llm.factory import reset_provider
 from app.models.requests import IngestRequest
-from app.state.workspace import WorkspaceStore, init_store
+from app.state.workspace import init_store
 
 DATA_PATH = Path(__file__).resolve().parents[1] / "app" / "data" / "novacivitas.json"
 

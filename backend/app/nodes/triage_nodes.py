@@ -12,7 +12,7 @@ from app.flows import plan_flow
 from app.llm.schemas import ContradictionGroup
 from app.models.enums import IncidentType, TraceStepStatus, TraceStepType
 from app.models.incident import Incident
-from app.models.plan import ConstraintViolation, IncidentPlan, PlanSummary
+from app.models.plan import IncidentPlan, PlanSummary
 from app.models.requests import PlanRequest
 from app.services.trace_builder import append_step
 from app.state.workspace import get_store
@@ -22,16 +22,16 @@ class PlanState(TypedDict, total=False):
     # Input
     request: PlanRequest
     # Step outputs
-    incidents: list                     # list[Incident]
-    classifications: dict               # {inc_id: classification_dict}
-    contradiction_groups: list          # list[ContradictionGroup]
-    resolutions: dict                   # {inc_id: resolved_conflict_dict}
-    routing_results: dict               # {inc_id: {"departments": [...], "resources": [...]}}
-    chains: dict                        # {inc_id: list[action_step_dict]}
-    violations: list                    # list[ConstraintViolation]
-    drafts: dict                        # {inc_id: notification_drafts_dict}
-    priorities: dict                    # {inc_id: float}
-    incident_plans: list                # list[IncidentPlan]
+    incidents: list  # list[Incident]
+    classifications: dict  # {inc_id: classification_dict}
+    contradiction_groups: list  # list[ContradictionGroup]
+    resolutions: dict  # {inc_id: resolved_conflict_dict}
+    routing_results: dict  # {inc_id: {"departments": [...], "resources": [...]}}
+    chains: dict  # {inc_id: list[action_step_dict]}
+    violations: list  # list[ConstraintViolation]
+    drafts: dict  # {inc_id: notification_drafts_dict}
+    priorities: dict  # {inc_id: float}
+    incident_plans: list  # list[IncidentPlan]
     plan_summary: Optional[PlanSummary]
     trace_steps: list
 
@@ -39,6 +39,7 @@ class PlanState(TypedDict, total=False):
 # ---------------------------------------------------------------------------
 # Node: fetch_open_incidents  →  S01
 # ---------------------------------------------------------------------------
+
 
 def fetch_open_incidents(state: PlanState) -> PlanState:
     store = get_store()
@@ -58,6 +59,7 @@ def fetch_open_incidents(state: PlanState) -> PlanState:
 # ---------------------------------------------------------------------------
 # Node: classify_incidents  →  S02-*
 # ---------------------------------------------------------------------------
+
 
 def classify_incidents(state: PlanState) -> PlanState:
     trace: list = list(state.get("trace_steps") or [])
@@ -82,6 +84,7 @@ def classify_incidents(state: PlanState) -> PlanState:
 # ---------------------------------------------------------------------------
 # Node: detect_contradictions  →  (no trace — decision recorded in resolver)
 # ---------------------------------------------------------------------------
+
 
 def detect_contradictions(state: PlanState) -> PlanState:
     incidents: list[Incident] = state.get("incidents") or []
@@ -111,6 +114,7 @@ def detect_contradictions(state: PlanState) -> PlanState:
 # ---------------------------------------------------------------------------
 # Node: resolve_contradictions  →  S03-resolve
 # ---------------------------------------------------------------------------
+
 
 def resolve_contradictions(state: PlanState) -> PlanState:
     incidents: list[Incident] = state.get("incidents") or []
@@ -155,6 +159,7 @@ def resolve_contradictions(state: PlanState) -> PlanState:
 # Node: route_and_match  →  S04
 # ---------------------------------------------------------------------------
 
+
 def route_and_match(state: PlanState) -> PlanState:
     store = get_store()
     incidents: list[Incident] = state.get("incidents") or []
@@ -177,6 +182,7 @@ def route_and_match(state: PlanState) -> PlanState:
 # Node: build_chains  →  S05
 # ---------------------------------------------------------------------------
 
+
 def build_chains(state: PlanState) -> PlanState:
     incidents: list[Incident] = state.get("incidents") or []
     classifications: dict = state.get("classifications") or {}
@@ -198,6 +204,7 @@ def build_chains(state: PlanState) -> PlanState:
 # ---------------------------------------------------------------------------
 # Node: check_constraints  →  S06
 # ---------------------------------------------------------------------------
+
 
 def check_constraints(state: PlanState) -> PlanState:
     routing_results: dict = state.get("routing_results") or {}
@@ -222,6 +229,7 @@ def check_constraints(state: PlanState) -> PlanState:
 # Node: draft_notifications  →  S07
 # ---------------------------------------------------------------------------
 
+
 def draft_notifications(state: PlanState) -> PlanState:
     incidents: list[Incident] = state.get("incidents") or []
     classifications: dict = state.get("classifications") or {}
@@ -243,6 +251,7 @@ def draft_notifications(state: PlanState) -> PlanState:
 # Node: prioritize  →  S08
 # ---------------------------------------------------------------------------
 
+
 def prioritize(state: PlanState) -> PlanState:
     incidents: list[Incident] = state.get("incidents") or []
     classifications: dict = state.get("classifications") or {}
@@ -263,6 +272,7 @@ def prioritize(state: PlanState) -> PlanState:
 # ---------------------------------------------------------------------------
 # Node: persist_plan  →  S09
 # ---------------------------------------------------------------------------
+
 
 def persist_plan(state: PlanState) -> PlanState:
     store = get_store()

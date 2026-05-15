@@ -16,7 +16,6 @@ from app.flows.simulate_flow import (
     capture_after_state,
     compute_metrics,
     build_animation_frames,
-    persist_simulation,
     run_simulate,
 )
 from app.models.enums import IncidentStatus, IncidentType
@@ -99,8 +98,12 @@ class TestRoadImpact:
         execute_action_chains(seeded_store, plan_summary)
         after_roads = {r["roadId"]: r["status"] for r in seeded_store.road_segments}
         # At least one road should change status if there are water_leak or road_blockage incidents
-        has_water = any(p.incidentType == IncidentType.WATER_LEAK for p in plan_summary.incidentPlans)
-        has_block = any(p.incidentType == IncidentType.ROAD_BLOCKAGE for p in plan_summary.incidentPlans)
+        has_water = any(
+            p.incidentType == IncidentType.WATER_LEAK for p in plan_summary.incidentPlans
+        )
+        has_block = any(
+            p.incidentType == IncidentType.ROAD_BLOCKAGE for p in plan_summary.incidentPlans
+        )
         if has_water or has_block:
             changed = any(before_roads.get(k) != v for k, v in after_roads.items())
             assert changed, "Expected at least one road status change"

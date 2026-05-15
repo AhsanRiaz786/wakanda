@@ -61,7 +61,9 @@ class GeminiLLMProvider:
             f"Source Metadata: {incident.sourceMetadata}\n"
         )
         if incident.coordinates:
-            payload += f"Coordinates: lat={incident.coordinates.lat}, lng={incident.coordinates.lng}\n"
+            payload += (
+                f"Coordinates: lat={incident.coordinates.lat}, lng={incident.coordinates.lng}\n"
+            )
 
         def _invoke() -> ClassificationResult:
             return self.classifier.invoke(
@@ -115,7 +117,7 @@ class GeminiLLMProvider:
             # Ensure the LLM didn't invent a new winner
             if res.winning_incident_id != deterministic_resolution.winning_incident_id:
                 res.winning_incident_id = deterministic_resolution.winning_incident_id
-            
+
             # The LLM doesn't have the full incident object to recreate the 'resolution' dict
             # accurately, so we merge the LLM's rationale and confidence with the
             # deterministic resolution object.
@@ -130,9 +132,7 @@ class GeminiLLMProvider:
     # draft_notifications
     # ------------------------------------------------------------------
 
-    def draft_notifications(
-        self, incident_id: str, incident_type: str
-    ) -> NotificationDrafts:
+    def draft_notifications(self, incident_id: str, incident_type: str) -> NotificationDrafts:
         payload = f"Draft notifications for Incident {incident_id} of type {incident_type}."
 
         def _invoke() -> NotificationDrafts:

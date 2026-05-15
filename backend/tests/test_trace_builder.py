@@ -4,8 +4,6 @@ Covers: append_step, build_agent_trace (counts + summary),
 nested children flattening, and depth filtering.
 """
 
-import pytest
-
 from app.models.enums import TraceStepStatus, TraceStepType
 from app.services.trace_builder import (
     append_step,
@@ -56,7 +54,9 @@ class TestAppendStep:
     def test_multiple_appends_accumulate(self):
         steps = []
         for i in range(5):
-            append_step(steps, step_id=f"S{i}", name=f"Step {i}", step_type=TraceStepType.STATE_UPDATE)
+            append_step(
+                steps, step_id=f"S{i}", name=f"Step {i}", step_type=TraceStepType.STATE_UPDATE
+            )
         assert len(steps) == 5
 
 
@@ -115,20 +115,31 @@ class TestFlatten:
         steps = []
         # Parent step with children
         child1 = {
-            "stepId": "C1", "name": "Child 1",
-            "type": TraceStepType.LLM_CALL, "status": TraceStepStatus.SUCCESS,
-            "durationMs": 10, "inputSummary": "", "outputSummary": "",
-            "decisionRationale": None, "children": [],
+            "stepId": "C1",
+            "name": "Child 1",
+            "type": TraceStepType.LLM_CALL,
+            "status": TraceStepStatus.SUCCESS,
+            "durationMs": 10,
+            "inputSummary": "",
+            "outputSummary": "",
+            "decisionRationale": None,
+            "children": [],
         }
         child2 = {
-            "stepId": "C2", "name": "Child 2",
-            "type": TraceStepType.TOOL_CALL, "status": TraceStepStatus.SUCCESS,
-            "durationMs": 5, "inputSummary": "", "outputSummary": "",
-            "decisionRationale": None, "children": [],
+            "stepId": "C2",
+            "name": "Child 2",
+            "type": TraceStepType.TOOL_CALL,
+            "status": TraceStepStatus.SUCCESS,
+            "durationMs": 5,
+            "inputSummary": "",
+            "outputSummary": "",
+            "decisionRationale": None,
+            "children": [],
         }
         append_step(
             steps,
-            step_id="P1", name="Parent",
+            step_id="P1",
+            name="Parent",
             step_type=TraceStepType.DECISION,
             children=[child1, child2],
         )
@@ -140,22 +151,34 @@ class TestFlatten:
     def test_duration_summed_across_tree(self):
         steps = [
             {
-                "stepId": "P", "name": "Parent",
-                "type": TraceStepType.DECISION, "status": TraceStepStatus.SUCCESS,
-                "durationMs": 100, "inputSummary": "", "outputSummary": "",
+                "stepId": "P",
+                "name": "Parent",
+                "type": TraceStepType.DECISION,
+                "status": TraceStepStatus.SUCCESS,
+                "durationMs": 100,
+                "inputSummary": "",
+                "outputSummary": "",
                 "decisionRationale": None,
                 "children": [
                     {
-                        "stepId": "C", "name": "Child",
-                        "type": TraceStepType.LLM_CALL, "status": TraceStepStatus.SUCCESS,
-                        "durationMs": 50, "inputSummary": "", "outputSummary": "",
-                        "decisionRationale": None, "children": [],
+                        "stepId": "C",
+                        "name": "Child",
+                        "type": TraceStepType.LLM_CALL,
+                        "status": TraceStepStatus.SUCCESS,
+                        "durationMs": 50,
+                        "inputSummary": "",
+                        "outputSummary": "",
+                        "decisionRationale": None,
+                        "children": [],
                     }
                 ],
             }
         ]
         trace = build_agent_trace(
-            trace_id="T", plan_id="P", generated_at="now", steps=steps,
+            trace_id="T",
+            plan_id="P",
+            generated_at="now",
+            steps=steps,
         )
         assert trace.summary.totalDurationMs == 150
 
@@ -168,7 +191,11 @@ class TestFlatten:
 class TestDepthFilter:
     def test_full_returns_all_steps(self):
         steps = [
-            {"stepId": "S1", "name": "A", "children": [{"stepId": "S1.1", "name": "A.1", "children": []}]},
+            {
+                "stepId": "S1",
+                "name": "A",
+                "children": [{"stepId": "S1.1", "name": "A.1", "children": []}],
+            },
             {"stepId": "S2", "name": "B", "children": []},
         ]
         filtered = filter_trace_steps(steps, "full")
@@ -177,7 +204,11 @@ class TestDepthFilter:
 
     def test_summary_strips_children(self):
         steps = [
-            {"stepId": "S1", "name": "A", "children": [{"stepId": "S1.1", "name": "A.1", "children": []}]},
+            {
+                "stepId": "S1",
+                "name": "A",
+                "children": [{"stepId": "S1.1", "name": "A.1", "children": []}],
+            },
             {"stepId": "S2", "name": "B", "children": []},
         ]
         filtered = filter_trace_steps(steps, "summary")
@@ -185,9 +216,6 @@ class TestDepthFilter:
         assert filtered[0]["children"] == []
 
     def test_summary_preserves_top_level_count(self):
-        steps = [
-            {"stepId": f"S{i}", "name": f"Step {i}", "children": []}
-            for i in range(10)
-        ]
+        steps = [{"stepId": f"S{i}", "name": f"Step {i}", "children": []} for i in range(10)]
         filtered = filter_trace_steps(steps, "summary")
         assert len(filtered) == 10
