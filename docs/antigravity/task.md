@@ -1,20 +1,27 @@
-# CityIRA — Antigravity task plan
+# Wakanda Implementation Tasks
 
-> Fill in as you build in Google Antigravity IDE.
-
-## Goal
-
-City Incident-to-Response Routing Agent (Challenge 1) — mobile + LangGraph backend.
-
-## Tasks
-
-- [ ] Backend scaffold (`backend/`)
-- [ ] LangGraph flows: ingest, triage, simulate, trace
-- [ ] Mobile Expo app: map, incidents, plan, simulate, trace
-- [ ] Seed 5 demo incidents + contradiction demo
-- [ ] Demo videos (product + Antigravity IDE)
-
-## References
-
-- [plan.md](../../plan.md)
-- [planmvp.md](../../planmvp.md)
+- `[/]` Phase 1: Foundation & Backend Setup
+  - `[x]` Configure `backend/.env` with `MOCK_LLM=true`
+  - `[x]` Setup FastAPI and LangGraph core structure
+  - `[x]` Setup React Native Expo project structure and dependencies
+  - `[x]` Translate CSS variables to `theme.ts`
+- `[/]` Phase 2: Frontend UI Components
+  - `[x]` Typography & Badges
+  - `[x]` Navigation & Layout components
+  - `[x]` Complex UI Elements (Timeline, KPIs, Trace Nodes)
+- `[x]` Phase 3: Screen Implementation
+  - `[x]` Screen 1: Map Dashboard
+  - `[x]` Screen 2: Incident Feed (List View)
+  - `[x]` Screen 3: Incident Detail
+  - `[x]` Screen 4: Report Incident
+  - `[x]` Screen 5: Simulation View (Integrated)
+  - `[x]` Screen 6: Agent Trace
+- `[x]` Phase 4: Integration & LangGraph Wiring
+  - `[x]` API Client Setup in Mobile
+  - `[x]` IngestIncidentFlow
+  - `[x]` TriageAndPlanFlow
+  - `[x]` SimulateResponseFlow
+  - `[x]` Trace Logging
+- `[x]` Phase 5: Verification & Polish
+  - `[x]` Automated Testing (`smoke_test.sh`)
+  - `[x]` Manual Verification & UI Polish
