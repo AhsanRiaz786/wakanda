@@ -1,41 +1,41 @@
 # CityIRA Foundation — Task Tracker
 
 ## Wave 0 — CONTRACT (freeze interfaces)
-- `[/]` Create `backend/app/llm/__init__.py`
-- `[/]` Create `backend/app/llm/schemas.py` (ClassificationResult, ResolvedConflict, NotificationDrafts, ContradictionGroup)
-- `[/]` Create `backend/app/llm/protocol.py` (LLMProvider Protocol)
-- `[/]` Create `backend/app/llm/prompts.py` (system prompt constants)
-- `[/]` Create `backend/app/llm/mock_provider.py` (port _mock_* from llm_tools)
-- `[/]` Create `backend/app/llm/factory.py` (mock-only factory stub)
-- `[/]` Create `backend/app/tools/contradiction.py` (stubs returning empty/minimal)
-- `[/]` Modify `backend/app/tools/llm_tools.py` (delegate classify + draft to factory)
-- `[ ]` Verify: `uv run python -c "from app.llm.schemas import ClassificationResult"`
+- `[x]` Create `backend/app/llm/__init__.py`
+- `[x]` Create `backend/app/llm/schemas.py` (ClassificationResult, ResolvedConflict, NotificationDrafts, ContradictionGroup)
+- `[x]` Create `backend/app/llm/protocol.py` (LLMProvider Protocol)
+- `[x]` Create `backend/app/llm/prompts.py` (system prompt constants)
+- `[x]` Create `backend/app/llm/mock_provider.py` (port _mock_* from llm_tools)
+- `[x]` Create `backend/app/llm/factory.py` (mock-only factory stub)
+- `[x]` Create `backend/app/tools/contradiction.py` (stubs returning empty/minimal)
+- `[x]` Modify `backend/app/tools/llm_tools.py` (delegate classify + draft to factory)
+- `[x]` Verify: `uv run python -c "from app.llm.schemas import ClassificationResult"`
 
 ## Wave 1 — Parallel Agents (sequential in this session)
 
 ### Agent A — LLM / Gemini
-- `[ ]` Create `backend/app/llm/base.py` (invoke_with_retry helper)
-- `[ ]` Create `backend/app/llm/gemini_provider.py` (structured output, retry, fallbacks)
-- `[ ]` Extend `backend/app/llm/factory.py` (wire GeminiLLMProvider)
-- `[ ]` Extend `backend/app/tools/llm_tools.py` (wire resolve_contradiction to provider)
+- `[x]` Create `backend/app/llm/base.py` (invoke_with_retry helper)
+- `[x]` Create `backend/app/llm/gemini_provider.py` (structured output, retry, fallbacks)
+- `[x]` Extend `backend/app/llm/factory.py` (wire GeminiLLMProvider)
+- `[x]` Extend `backend/app/tools/llm_tools.py` (wire resolve_contradiction to provider)
 
 ### Agent B — Contradiction Algorithm
-- `[ ]` Implement `backend/app/tools/contradiction.py` (haversine, detect_groups, score_source, resolve_group)
+- `[x]` Implement `backend/app/tools/contradiction.py` (haversine, detect_groups, score_source, resolve_group)
 
 ### Agent C — Ingest Flow
-- `[ ]` Rewrite `backend/app/flows/ingest_flow.py` (6 step functions + orchestrator)
+- `[x]` Rewrite `backend/app/flows/ingest_flow.py` (6 step functions + orchestrator)
 
 ### Agent D — Plan Flow
-- `[ ]` Rewrite `backend/app/flows/plan_flow.py` (10 step functions + orchestrator)
+- `[x]` Rewrite `backend/app/flows/plan_flow.py` (10 step functions + orchestrator)
 
 ### Agent E — Simulate Flow
-- `[ ]` Rewrite `backend/app/flows/simulate_flow.py` (8 step functions + animation frames)
+- `[x]` Rewrite `backend/app/flows/simulate_flow.py` (8 step functions + animation frames)
 
 ### Agent F — Trace + Baseline
-- `[ ]` Add `filter_trace_steps` to `backend/app/services/trace_builder.py`
-- `[ ]` Update `backend/app/flows/trace_flow.py` (pass depth through)
-- `[ ]` Update `backend/app/api/routes/trace.py` (read depth query param)
-- `[ ]` Verify/fix `backend/app/services/baseline.py` keywords
+- `[x]` Add `filter_trace_steps` to `backend/app/services/trace_builder.py`
+- `[x]` Update `backend/app/flows/trace_flow.py` (pass depth through)
+- `[x]` Update `backend/app/api/routes/trace.py` (read depth query param)
+- `[x]` Verify/fix `backend/app/services/baseline.py` keywords
 
 ## Wave 2 — INTEGRATOR
 - `[ ]` Run `uv run python scripts/seed_demo_incidents.py`

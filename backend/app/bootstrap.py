@@ -48,7 +48,7 @@ def seed_if_empty() -> int:
     count = 0
     for sample in DEMO_SAMPLES:
         body = IngestRequest(**sample)
-        incident, _, error = run_ingest(store, body)
+        incident, _, error, _ = run_ingest(store, body)
         if error:
             raise RuntimeError(error)
         count += 1

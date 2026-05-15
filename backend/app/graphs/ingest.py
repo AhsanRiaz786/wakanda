@@ -15,7 +15,7 @@ class IngestState(TypedDict, total=False):
 
 
 def _ingest_node(state: IngestState) -> IngestState:
-    incident, trace, error = run_ingest(get_store(), state["request"])
+    incident, trace, error, _ = run_ingest(get_store(), state["request"])
     return {"incident": incident, "trace_steps": trace, "error": error}
 
 
