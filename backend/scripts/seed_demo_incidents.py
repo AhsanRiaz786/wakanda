@@ -18,7 +18,7 @@ def main() -> None:
     store.incidents.clear()
     for sample in DEMO_SAMPLES:
         body = IngestRequest(**sample)
-        incident, _, error = run_ingest(store, body)
+        incident, _, error, _ = run_ingest(store, body)
         if error:
             raise RuntimeError(error)
         print(f"Seeded {incident.incidentId} ({body.sourceType})")
