@@ -1,55 +1,38 @@
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Tabs } from 'expo-router';
-
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
-}
+import { Tabs, useRouter, useSegments } from 'expo-router';
+import { BottomNav } from '../../components/BottomNav';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const router = useRouter();
+  const segments = useSegments();
+
+  // Determine active tab from route segments
+  let activeTab: 'Map' | 'Incidents' | 'Report' | 'Trace' = 'Map';
+  if (segments.includes('incidents')) activeTab = 'Incidents';
+  else if (segments.includes('report')) activeTab = 'Report';
+  else if (segments.includes('trace')) activeTab = 'Trace';
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#1A56A0',
-        headerShown: useClientOnlyValue(false, true),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Map',
-          tabBarIcon: ({ color }) => <TabBarIcon name="map" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="incidents"
-        options={{
-          title: 'Incidents',
-          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="report"
-        options={{
-          title: 'Report',
-          tabBarIcon: ({ color }) => <TabBarIcon name="plus-circle" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="trace"
-        options={{
-          title: 'Trace',
-          tabBarIcon: ({ color }) => <TabBarIcon name="sitemap" color={color} />,
-        }}
-      />
+        headerShown: false,
+      }}
+      tabBar={() => (
+        <BottomNav 
+          activeTab={activeTab} 
+          onTabSelect={(tab) => {
+            if (tab === 'Map') router.push('/');
+            else if (tab === 'Incidents') router.push('/incidents');
+            else if (tab === 'Report') router.push('/report');
+            else if (tab === 'Trace') router.push('/trace');
+          }} 
+        />
+      )}
+    >
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="incidents" />
+      <Tabs.Screen name="report" />
+      <Tabs.Screen name="trace" />
     </Tabs>
   );
 }
