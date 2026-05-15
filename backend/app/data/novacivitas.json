@@ -1,0 +1,47 @@
+{
+  "cityName": "NovaCivitas",
+  "districts": [
+    {"districtId": "D-01", "name": "Central District", "populationDensity": "high", "center": {"lat": 33.7205, "lng": 73.0478}},
+    {"districtId": "D-02", "name": "Market Quarter", "populationDensity": "high", "center": {"lat": 33.7185, "lng": 73.0512}},
+    {"districtId": "D-03", "name": "Industrial Zone", "populationDensity": "low", "center": {"lat": 33.7145, "lng": 73.0432}},
+    {"districtId": "D-04", "name": "Residential North", "populationDensity": "medium", "center": {"lat": 33.7265, "lng": 73.0495}},
+    {"districtId": "D-05", "name": "Tech Corridor", "populationDensity": "medium", "center": {"lat": 33.722, "lng": 73.0561}}
+  ],
+  "departments": [
+    {"departmentId": "DEPT-UTIL", "name": "Utilities & Water", "shortName": "UTIL", "responsibilities": ["water_leak", "power_outage"], "resources": ["CR-01", "CR-02", "VH-05"]},
+    {"departmentId": "DEPT-POWER", "name": "Power & Utilities", "shortName": "POWER", "responsibilities": ["power_outage"], "resources": ["CR-02"]},
+    {"departmentId": "DEPT-TRAFFIC", "name": "Traffic Management", "shortName": "TRAFFIC", "responsibilities": ["road_blockage", "accident"], "resources": ["CR-03", "VH-07"]},
+    {"departmentId": "DEPT-EMER", "name": "Emergency Services", "shortName": "EMER", "responsibilities": ["accident"], "resources": ["CR-04"]},
+    {"departmentId": "DEPT-WORKS", "name": "Public Works", "shortName": "WORKS", "responsibilities": ["road_blockage"], "resources": ["CR-05"]},
+    {"departmentId": "DEPT-GEN", "name": "General Operations", "shortName": "GEN", "responsibilities": ["other"], "resources": ["CR-06"]}
+  ],
+  "resources": [
+    {"resourceId": "CR-01", "name": "Alpha Water Team", "type": "repair_crew", "assignedDepartmentId": "DEPT-UTIL", "homeBase": {"lat": 33.7145, "lng": 73.0432, "name": "D-03 Utility Depot"}, "currentLocation": {"lat": 33.7145, "lng": 73.0432}, "status": "available", "skills": ["water_leak"], "estimatedHourlyRatePKR": 3500},
+    {"resourceId": "CR-02", "name": "Beta Utilities", "type": "repair_crew", "assignedDepartmentId": "DEPT-UTIL", "homeBase": {"lat": 33.7145, "lng": 73.0432, "name": "D-03 Utility Depot"}, "currentLocation": {"lat": 33.7145, "lng": 73.0432}, "status": "available", "skills": ["water_leak", "power_outage"], "estimatedHourlyRatePKR": 3500},
+    {"resourceId": "CR-03", "name": "Traffic Unit 1", "type": "repair_crew", "assignedDepartmentId": "DEPT-TRAFFIC", "homeBase": {"lat": 33.7205, "lng": 73.0478, "name": "D-01 City Hall Annex"}, "currentLocation": {"lat": 33.7205, "lng": 73.0478}, "status": "available", "skills": ["road_blockage", "accident"], "estimatedHourlyRatePKR": 2800},
+    {"resourceId": "CR-04", "name": "Rapid Response", "type": "ambulance", "assignedDepartmentId": "DEPT-EMER", "homeBase": {"lat": 33.722, "lng": 73.0561, "name": "D-05 Hospital Road"}, "currentLocation": {"lat": 33.722, "lng": 73.0561}, "status": "available", "skills": ["accident"], "estimatedHourlyRatePKR": 5000},
+    {"resourceId": "CR-05", "name": "Works Alpha", "type": "repair_crew", "assignedDepartmentId": "DEPT-WORKS", "homeBase": {"lat": 33.7265, "lng": 73.0495, "name": "D-04 North Depot"}, "currentLocation": {"lat": 33.7265, "lng": 73.0495}, "status": "available", "skills": ["road_blockage"], "estimatedHourlyRatePKR": 3000},
+    {"resourceId": "CR-06", "name": "General Ops", "type": "inspection_team", "assignedDepartmentId": "DEPT-GEN", "homeBase": {"lat": 33.7205, "lng": 73.0478, "name": "D-01 City Hall"}, "currentLocation": {"lat": 33.7205, "lng": 73.0478}, "status": "available", "skills": ["other"], "estimatedHourlyRatePKR": 2500},
+    {"resourceId": "VH-05", "name": "Utility Truck 1", "type": "utility_vehicle", "assignedDepartmentId": "DEPT-UTIL", "homeBase": {"lat": 33.7145, "lng": 73.0432, "name": "D-03 Utility Depot"}, "currentLocation": {"lat": 33.7145, "lng": 73.0432}, "status": "available", "skills": ["water_leak"], "estimatedHourlyRatePKR": 1200},
+    {"resourceId": "VH-07", "name": "Traffic Cones Van", "type": "utility_vehicle", "assignedDepartmentId": "DEPT-TRAFFIC", "homeBase": {"lat": 33.7185, "lng": 73.0512, "name": "D-02 Market Depot"}, "currentLocation": {"lat": 33.7185, "lng": 73.0512}, "status": "available", "skills": ["road_blockage", "water_leak"], "estimatedHourlyRatePKR": 1000}
+  ],
+  "roadSegments": [
+    {"roadId": "RD-01", "name": "Main Boulevard", "districtIds": ["D-01", "D-02"], "status": "open", "startCoords": {"lat": 33.7205, "lng": 73.0478}, "endCoords": {"lat": 33.7185, "lng": 73.0512}},
+    {"roadId": "RD-02", "name": "Market Street", "districtIds": ["D-02"], "status": "open", "startCoords": {"lat": 33.7185, "lng": 73.0512}, "endCoords": {"lat": 33.718, "lng": 73.052}},
+    {"roadId": "RD-03", "name": "Industrial Ring Road", "districtIds": ["D-03"], "status": "open", "startCoords": {"lat": 33.7145, "lng": 73.0432}, "endCoords": {"lat": 33.715, "lng": 73.045}},
+    {"roadId": "RD-04", "name": "Utility Lane", "districtIds": ["D-02", "D-03"], "status": "open", "startCoords": {"lat": 33.716, "lng": 73.048}, "endCoords": {"lat": 33.7145, "lng": 73.0432}},
+    {"roadId": "RD-05", "name": "Heritage Avenue", "districtIds": ["D-01"], "status": "open", "startCoords": {"lat": 33.7205, "lng": 73.0478}, "endCoords": {"lat": 33.721, "lng": 73.046}},
+    {"roadId": "RD-06", "name": "North Connector", "districtIds": ["D-04"], "status": "open", "startCoords": {"lat": 33.7265, "lng": 73.0495}, "endCoords": {"lat": 33.727, "lng": 73.05}},
+    {"roadId": "RD-07", "name": "Hospital Road", "districtIds": ["D-05"], "status": "open", "startCoords": {"lat": 33.722, "lng": 73.0561}, "endCoords": {"lat": 33.723, "lng": 73.055}},
+    {"roadId": "RD-08", "name": "Suburban Loop", "districtIds": ["D-04"], "status": "open", "startCoords": {"lat": 33.7265, "lng": 73.0495}, "endCoords": {"lat": 33.725, "lng": 73.048}},
+    {"roadId": "RD-09", "name": "Tech Park Drive", "districtIds": ["D-05"], "status": "open", "startCoords": {"lat": 33.722, "lng": 73.0561}, "endCoords": {"lat": 33.7215, "lng": 73.054}},
+    {"roadId": "RD-10", "name": "Central Flyover", "districtIds": ["D-01", "D-05"], "status": "open", "startCoords": {"lat": 33.7215, "lng": 73.052}, "endCoords": {"lat": 33.722, "lng": 73.0561}}
+  ],
+  "locationLookup": [
+    {"name": "Market Quarter", "lat": 33.7185, "lng": 73.0512},
+    {"name": "Market Street", "lat": 33.7185, "lng": 73.0512},
+    {"name": "Industrial Zone", "lat": 33.7145, "lng": 73.0432},
+    {"name": "Central District", "lat": 33.7205, "lng": 73.0478},
+    {"name": "Central Flyover", "lat": 33.7215, "lng": 73.052}
+  ]
+}
