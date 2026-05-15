@@ -12,5 +12,4 @@ def get_trace(
     includeSimTrace: bool = Query(True),
     depth: str = Query("full"),
 ):
-    _ = depth  # reserved for summary mode
-    return run_trace(get_store(), planId, includeSimTrace)
+    return run_trace(get_store(), planId, includeSimTrace, depth)

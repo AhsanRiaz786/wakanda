@@ -90,3 +90,17 @@ def _flatten(steps: list[TraceStep]) -> list[TraceStep]:
         out.append(step)
         out.extend(_flatten(step.children))
     return out
+
+
+def filter_trace_steps(steps: list[dict], depth: str) -> list[dict]:
+    """Filter trace steps based on depth ('summary' or 'full')."""
+    if depth == "full":
+        return steps
+        
+    summary_steps = []
+    for step in steps:
+        # Create a shallow copy and clear children
+        s_copy = dict(step)
+        s_copy["children"] = []
+        summary_steps.append(s_copy)
+    return summary_steps
