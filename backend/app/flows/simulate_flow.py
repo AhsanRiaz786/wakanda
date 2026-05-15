@@ -141,7 +141,7 @@ def run_simulate(store: WorkspaceStore, body: SimulateRequest) -> tuple[Simulati
     after = capture_after_state(store)
     metrics = compute_metrics(before, after, plan)
     
-    speed = body.speed if hasattr(body, 'speed') else "fast"
+    speed = body.simulationSpeed
     frames = build_animation_frames(before, after, actions, speed)
     
     run = persist_simulation(store, body.planId, started, before, after, actions, failures, metrics, frames)
