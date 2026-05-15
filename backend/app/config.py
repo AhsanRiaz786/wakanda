@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     mock_llm: bool = True
     cors_origins: str = "*"
     log_level: str = "INFO"
+    # Voice pipeline providers (all free-tier)
+    deepgram_api_key: str = ""
+    groq_api_key: str = ""
+    elevenlabs_api_key: str = ""
 
 
 settings = Settings()
