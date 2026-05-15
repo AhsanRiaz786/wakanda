@@ -136,21 +136,19 @@ def dispatch_intent(intent: str, params: dict[str, Any]) -> dict[str, Any]:
             sourceType=SourceType.REALTIME_FEED,
             rawAddress=params.get("rawAddress"),
         )
-        result = run_ingest(store, req)
-        if result.get("error"):
-            return result
-        inc = result.get("incident")
+        saved_inc, trace, err, is_duplicate = run_ingest(store, req)
+        if err:
+            return err
         return {
-            "incidentId": inc.incidentId if inc else None,
-            "title": inc.title if inc else None,
-            "severity": str(inc.severity) if inc else None,
-            "isDuplicate": result.get("is_duplicate", False),
+            "incidentId": saved_inc.incidentId if saved_inc else None,
+            "title": saved_inc.title if saved_inc else None,
+            "severity": str(saved_inc.severity) if saved_inc else None,
+            "isDuplicate": is_duplicate,
         }
 
     if intent == "plan":
         req = PlanRequest(planMode=params.get("planMode", "full"))
-        result = run_plan(store, req)
-        plan = result.get("plan_summary")
+        plan, trace = run_plan(store, req)
         if not plan:
             return {"error": "Plan generation failed"}
         return {
@@ -175,10 +173,9 @@ def dispatch_intent(intent: str, params: dict[str, Any]) -> dict[str, Any]:
         )
         req = SimulateRequest(planId=plan_id, simulationSpeed="fast", overrides=overrides)
         try:
-            result = run_simulate(store, req)
+            run, trace = run_simulate(store, req)
         except ValueError as e:
             return {"error": str(e)}
-        run = result.get("simulation_run")
         if not run:
             return {"error": "Simulation failed"}
         metrics = run.metrics or {}
