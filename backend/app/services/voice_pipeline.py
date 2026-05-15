@@ -256,7 +256,7 @@ async def synthesise(text: str) -> bytes:
     }
     body = {
         "text": text,
-        "model_id": "eleven_monolingual_v1",
+        "model_id": "eleven_flash_v2_5",
         "voice_settings": {"stability": 0.5, "similarity_boost": 0.75},
     }
     async with httpx.AsyncClient(timeout=20.0) as client:
