@@ -1,3 +1,5 @@
+> **Docs:** Full spec = this file. MVP build + Antigravity artifacts = [planmvp.md](./planmvp.md). Repo setup = [README.md](./README.md).
+
 **CITY INCIDENT-TO-RESPONSE**
 
 **ROUTING AGENT**
@@ -18,7 +20,9 @@ Section 2 --- Hackathon Compliance Checklist
 
 Section 3 --- System Architecture
 
-Section 4 --- Antigravity Flows --- Deep Specification
+Section 3.5--3.9 --- Backend Implementation (LangGraph + FastAPI) *(agent dev guide)*
+
+Section 4 --- Backend Agent Workflows --- Deep Specification
 
 Section 5 --- Data Models
 
@@ -59,7 +63,7 @@ Section 17 --- Submission Checklist
   Challenge            Google Antigravity Hackathon --- Challenge 1
   Challenge Title      Autonomous Content-to-Action Agent (Insight → Action System)
   Hackathon Timeline   May 15 idea submission → May 20 final submission → May 25--26 pitching
-  Build Window         \~36 hours (vibe coding sprint, 2 developers)
+  Build Window         \~36 hours (vibe coding sprint, 5 developers)
 
 ---
 
@@ -250,6 +254,113 @@ The backend's central role is not decorative. Every decision the system makes --
 **3.3.3 Workspace State Layer**
 
 For the hackathon, all state is held in a lightweight in-memory Python dict structure within the FastAPI process. No external database is required. The synthetic city dataset (NovaCivitas) is pre-loaded as a static JSON structure and read by workflows during planning. Simulation runs and traces are stored as in-memory artifacts and retrieved by the GetAgentTraceFlow on demand.
+
+**3.5 Backend Repository Layout (Canonical)**
+
+> **For coding agents:** Implement exactly this layout unless a human explicitly changes it. Do not scatter agent logic across the mobile app or ad-hoc scripts.
+
+```
+wakanda/
+├── plan.md                          # SOURCE OF TRUTH — read before any feature work
+├── backend/
+│   ├── pyproject.toml               # Python 3.11+, deps below
+│   ├── .env.example
+│   ├── README.md                    # curl recipes + local run (short)
+│   ├── app/
+│   │   ├── main.py                  # FastAPI app, lifespan, CORS, /health
+│   │   ├── config.py                # Settings from env (pydantic-settings)
+│   │   ├── api/
+│   │   │   ├── router.py            # mounts /v1/*
+│   │   │   └── routes/
+│   │   │       ├── ingest.py        # POST /ingest
+│   │   │       ├── plan.py          # POST /plan (+ ?mode=baseline)
+│   │   │       ├── simulate.py      # POST /simulate
+│   │   │       ├── trace.py         # GET /trace
+│   │   │       └── incidents.py     # GET /incidents, GET /incidents/:id
+│   │   ├── graphs/                  # one module per LangGraph workflow
+│   │   │   ├── ingest.py            # IngestIncidentFlow graph
+│   │   │   ├── triage_plan.py       # TriageAndPlanFlow graph
+│   │   │   ├── simulate.py          # SimulateResponseFlow graph
+│   │   │   └── trace.py             # GetAgentTraceFlow (thin assembler)
+│   │   ├── nodes/                   # pure node functions (testable)
+│   │   │   ├── ingest_nodes.py
+│   │   │   ├── triage_nodes.py
+│   │   │   └── simulate_nodes.py
+│   │   ├── tools/                   # LangChain @tool + rule tools
+│   │   │   ├── geo.py               # GeoNormalizerTool
+│   │   │   ├── routing.py           # RoutingTool
+│   │   │   ├── resources.py         # ResourceMatcherTool
+│   │   │   └── llm_tools.py         # IncidentClassifier, ContradictionResolver, NotificationDraft
+│   │   ├── models/                  # Pydantic v2 — API + graph I/O
+│   │   │   ├── incident.py
+│   │   │   ├── plan.py
+│   │   │   ├── simulation.py
+│   │   │   └── trace.py
+│   │   ├── state/
+│   │   │   └── workspace.py         # WorkspaceStore singleton
+│   │   ├── services/
+│   │   │   ├── ids.py               # INC-/PLAN-/SIM-/TRACE- id generators
+│   │   │   ├── baseline.py          # Static Triage Table for /plan?mode=baseline
+│   │   │   └── trace_builder.py     # merges flow traces → AgentTrace tree
+│   │   └── data/
+│   │       └── novacivitas.json     # synthetic city seed (Section 10)
+│   ├── scripts/
+│   │   ├── seed_demo_incidents.py   # loads Section 11 five inputs
+│   │   └── smoke_test.sh            # curl ingest → plan → simulate → trace
+│   └── tests/
+│       ├── test_ingest_graph.py
+│       ├── test_triage_graph.py
+│       └── test_tools.py
+├── mobile/                          # React Native + Expo (Section 6)
+└── docs/                            # optional: exported trace JSON from demo runs
+```
+
+**3.6 Python Stack & Versions**
+
+| Package | Role | Notes |
+|---------|------|-------|
+| `fastapi` + `uvicorn` | HTTP layer | All mobile traffic hits `/v1/*` only |
+| `langgraph` | Agent orchestration | `StateGraph`, compiled graphs invoked from route handlers |
+| `langchain-core` | Tool + message primitives | `@tool`, `AIMessage`, structured output |
+| `langchain-google-genai` | LLM | Gemini 2.0 Flash (or hackathon-approved model) via `GOOGLE_API_KEY` |
+| `pydantic` v2 | Schemas | Request/response bodies + LLM structured output |
+| `pydantic-settings` | Config | `.env` loading |
+| `httpx` | Optional | Only if proxying external URLs later |
+
+**Rule:** Business logic lives in `graphs/`, `nodes/`, and `tools/`. Route handlers only validate HTTP bodies, call `graph.ainvoke(initial_state)`, map final state to JSON, and handle HTTP errors.
+
+**3.7 Environment Variables**
+
+| Variable | Required | Default | Purpose |
+|----------|----------|---------|---------|
+| `GOOGLE_API_KEY` | Yes (for LLM flows) | — | Gemini API |
+| `LLM_MODEL` | No | `gemini-2.0-flash` | Override model id |
+| `MAX_BUDGET_PKR` | No | `50000` | Default constraint in TriageAndPlanFlow |
+| `MAX_DISPATCH_MINUTES` | No | `45` | Default ETA constraint |
+| `CORS_ORIGINS` | No | `*` | Expo dev; tighten for prod |
+| `LOG_LEVEL` | No | `INFO` | Structured logs for demo debugging |
+| `MOCK_LLM` | No | `false` | If `true`, tools return fixture JSON (CI / offline dev) |
+
+**3.8 Antigravity IDE vs Runtime Backend (Do Not Conflate)**
+
+| Concern | Antigravity IDE | FastAPI + LangGraph runtime |
+|---------|-----------------|------------------------------|
+| **What it is** | Where humans/agents *wrote* the code (task.md, plans, walkthrough) | What the mobile app *calls* at demo time |
+| **Hackathon proof** | Export IDE artifacts: `task.md`, `implementation_plan.md`, `walkthrough.md`, screenshots | Live API + in-app Agent Trace + optional `docs/demo-trace.json` |
+| **Submission narrative** | "Built with Google Antigravity" | "Autonomous workflows implemented as LangGraph graphs" |
+
+Judges care about **both**: IDE artifacts (25% Antigravity Integration) **and** runtime agent traces (20% Agentic Reasoning). Never claim the mobile app calls Antigravity-hosted flows if it actually calls your Cloud Run FastAPI URL — the README and demo script must match deployment reality.
+
+**3.9 Local Run Commands (Agent Quick Reference)**
+
+```bash
+cd backend && uv sync && cp .env.example .env   # add GOOGLE_API_KEY
+uv run python scripts/seed_demo_incidents.py
+uv run uvicorn app.main:app --reload --port 8000
+# smoke: ./scripts/smoke_test.sh
+```
+
+Mobile `.env`: `EXPO_PUBLIC_API_BASE_URL=http://<LAN_IP>:8000/v1` (not `localhost` on physical device).
 
 **3.4 Data Flow --- Step by Step**
 
@@ -511,6 +622,295 @@ Expose the structured reasoning trace from the most recent (or specified) Triage
 ---
 
 Each TraceStep contains: stepId, name (human-readable), type (llm_call \| tool_call \| decision \| state_update \| error), status (success \| warning \| failure), durationMs, inputSummary (string), outputSummary (string), children (TraceStep\[\]) for nested sub-steps, decisionRationale (string, populated for decision nodes).
+
+**4.5 LangGraph Architecture Patterns (Implementation Contract)**
+
+> **For coding agents:** Follow these patterns in every graph. Deviating breaks trace assembly and demo reliability.
+
+**4.5.1 Shared Principles**
+
+1. **One graph = one flow** — `ingest`, `triage_plan`, `simulate`, `trace` modules each export `build_graph() -> CompiledGraph`.
+2. **Typed state** — Use `TypedDict` or Pydantic model for graph state; never pass raw dicts without a schema.
+3. **Trace in every node** — Each node appends to `state["trace_steps"]` via `trace_builder.append_step(...)` before returning. GetAgentTraceFlow only *assembles*; it does not re-run logic.
+4. **Deterministic IDs** — Use `services/ids.py` (sequence counters in WorkspaceStore), not UUIDs, so demo reruns match screenshots.
+5. **Structured LLM outputs** — All LLM tools return Pydantic models; on parse failure, retry once then apply Section 4.2.8 fallbacks.
+6. **No LLM in simulate/ingest** — Keeps ingest \<500ms and simulation predictable for the 4-minute demo.
+
+**4.5.2 WorkspaceStore API (In-Memory State)**
+
+```python
+class WorkspaceStore:
+    incidents: list[Incident]
+    departments: list[Department]
+    resources: list[Resource]
+    road_segments: list[RoadSegment]
+    plans: dict[str, PlanSummary]           # planId -> plan
+    simulation_runs: dict[str, SimulationRun]
+    trace_log: list[FlowTraceEntry]         # append-only per flow invocation
+    _sequences: dict[str, int]              # for INC-/PLAN-/SIM- ids
+
+    def get_open_incidents(self, incident_ids: list[str] | None) -> list[Incident]: ...
+    def upsert_incident(self, incident: Incident) -> None: ...
+    def save_plan(self, plan: PlanSummary) -> None: ...
+    def get_plan(self, plan_id: str) -> PlanSummary: ...
+    def save_simulation(self, run: SimulationRun) -> None: ...
+    def append_trace(self, entry: FlowTraceEntry) -> None: ...
+    def get_traces_for_plan(self, plan_id: str) -> list[FlowTraceEntry]: ...
+    def snapshot_city_state(self) -> CityState: ...  # deep copy for before/after
+```
+
+Initialized once in FastAPI `lifespan`: load `data/novacivitas.json`, optionally merge seeded demo incidents.
+
+**4.5.3 Graph State Schemas (Per Flow)**
+
+**IngestGraphState**
+
+| Field | Type | Set by |
+|-------|------|--------|
+| `input` | `IngestRequest` | API route |
+| `incident` | `Incident \| None` | normalize + persist nodes |
+| `error` | `ApiError \| None` | validate node |
+| `trace_steps` | `list[TraceStep]` | all nodes |
+
+**TriageGraphState**
+
+| Field | Type | Set by |
+|-------|------|--------|
+| `request` | `PlanRequest` | API route |
+| `incidents` | `list[Incident]` | fetch_open |
+| `classifications` | `dict[str, ClassificationResult]` | classify_each |
+| `contradiction_groups` | `list[ContradictionGroup]` | detect_contradictions |
+| `resolutions` | `dict[str, ResolvedConflict]` | resolve_contradictions |
+| `incident_plans` | `list[IncidentPlan]` | route, match, build_chain, constraints |
+| `plan_summary` | `PlanSummary \| None` | assemble_plan |
+| `trace_steps` | `list[TraceStep]` | all nodes |
+
+**SimulateGraphState**
+
+| Field | Type | Set by |
+|-------|------|--------|
+| `request` | `SimulateRequest` | API route |
+| `plan` | `PlanSummary` | load_plan |
+| `before_state` | `CityState` | capture_before |
+| `after_state` | `CityState \| None` | capture_after |
+| `actions` | `list[SimulatedAction]` | execute_actions |
+| `simulation_run` | `SimulationRun \| None` | finalize |
+| `trace_steps` | `list[TraceStep]` | all nodes |
+
+**4.6 IngestIncidentFlow — LangGraph Node Map**
+
+```
+START → validate_input → normalize_timestamp → normalize_location → sanitize_description
+      → assign_id → persist_incident → END
+```
+
+| Node | Responsibility | On failure |
+|------|----------------|------------|
+| `validate_input` | 10+ char description, valid `sourceType` | Set `error`, short-circuit to END with 400 mapping in route |
+| `normalize_timestamp` | Parse ISO or use `utcnow()` | Warning trace, continue |
+| `normalize_location` | Validate coords or `GeoNormalizerTool` | `requiresLocationClarification=true` if low confidence |
+| `sanitize_description` | Strip HTML, truncate 2000 | — |
+| `assign_id` | `INC-{YYYYMMDD}-{seq}` | — |
+| `persist_incident` | `status=reported`, `incidentType=unknown` | Duplicate check → return existing (409) |
+
+**Conditional edge:** `validate_input` → if `error`: END; else continue.
+
+**4.7 TriageAndPlanFlow — LangGraph Node Map**
+
+```
+START → fetch_open_incidents → classify_all_incidents → detect_contradictions
+      → [has_contradictions?] resolve_contradictions → route_departments
+      → match_resources → build_action_chains → check_constraints
+      → draft_notifications → prioritize_plans → persist_and_trace → END
+```
+
+| Node | LLM? | Tool(s) | Trace step type |
+|------|-------|---------|-----------------|
+| `fetch_open_incidents` | No | — | `state_update` (S01) |
+| `classify_all_incidents` | Yes | `incident_classifier` per incident | `llm_call` (S02-*) |
+| `detect_contradictions` | No | geo proximity + time window | `decision` (S03) |
+| `resolve_contradictions` | Yes | `contradiction_resolver` per group | `llm_call` + `decision` children |
+| `route_departments` | No | `routing_tool` | `tool_call` (S04) |
+| `match_resources` | No | `resource_matcher` | `tool_call` (S05) |
+| `build_action_chains` | No | templates in code | `state_update` (S07) |
+| `check_constraints` | No | budget/time/double-book | `decision` (S06) |
+| `draft_notifications` | Yes | `notification_draft` | `llm_call` (S08) |
+| `prioritize_plans` | No | priority formula below | `state_update` |
+| `persist_and_trace` | No | WorkspaceStore | `state_update` |
+
+**Priority score (implement exactly):**
+
+```
+priorityScore = urgencyScore * severityMultiplier * sourceCredibilityWeight
+severityMultiplier: critical=4, high=3, medium=2, low=1
+sourceCredibilityWeight: csv_json=1.0, pdf_report=0.95, table_dashboard=0.9,
+                         realtime_feed=0.85, web_article=0.75
+```
+
+**planMode=quick:** Skip `detect_contradictions` / `resolve_contradictions` (for fast rehearsal only; demo uses `full`).
+
+**Parallelism:** `classify_all_incidents` may use `asyncio.gather` over incidents; merge traces in stable `incidentId` order for reproducible S02 numbering.
+
+**4.8 SimulateResponseFlow — LangGraph Node Map**
+
+```
+START → load_plan → capture_before_state → execute_action_chains
+      → [force_api_failure?] inject_failure_and_retry → capture_after_state
+      → compute_metrics → build_animation_frames → persist_simulation → END
+```
+
+| Node | Notes |
+|------|-------|
+| `execute_action_chains` | Iterate `plan.priorityOrdering`; for each `IncidentPlan.actionChain` step, mutate WorkspaceStore and append `SimulatedAction` |
+| `inject_failure_and_retry` | Only when `request.overrides.forceApiFailure`; fail `notify_department` on highest-priority incident once, then succeed |
+| `build_animation_frames` | 8--12 intermediate `CityState` snapshots for mobile interpolation (`simulationSpeed` affects frame count, not logic) |
+
+**Status transitions (enforce):** `reported` → `triaged` (validate) → `assigned` (dispatch) → `in_progress` (optional mid-sim) → `resolved` (if demo script needs full closure).
+
+**4.9 GetAgentTraceFlow — Assembly Only**
+
+Not a heavy LangGraph loop — a **linear graph** or plain service function:
+
+1. Load `trace_log` entries where `planId` matches (or latest plan).
+2. If `includeSimTrace`, merge simulation trace entries chronologically.
+3. Run `trace_builder.build_agent_trace(entries, depth)` → nested `TraceStep` tree matching Section 12.
+4. Populate `summary.totalLLMCalls` by counting `type==llm_call` nodes.
+
+**4.10 Tools Catalog (Schemas & Behavior)**
+
+**4.10.1 Source credibility table (ContradictionResolver + scoring)**
+
+| sourceType | weight | rationale |
+|------------|--------|-----------|
+| `csv_json` | 0.95 | Sensor/utility feed — objective |
+| `pdf_report` | 0.90 | Official field report |
+| `table_dashboard` | 0.85 | Ops dashboard export |
+| `realtime_feed` | 0.80 | Call center / live feed |
+| `web_article` | 0.70 | Secondary media narrative |
+
+**Recency:** `recencyScore = exp(-ageMinutes / 30)` (half-life ~21 min). Combined: `credibility = 0.6 * sourceWeight + 0.4 * recencyScore`.
+
+**4.10.2 RoutingTool matrix (rule-based, no LLM)**
+
+| incidentType | assignedDepartments |
+|--------------|---------------------|
+| `water_leak` | `DEPT-UTIL`, `DEPT-TRAFFIC` |
+| `power_outage` | `DEPT-POWER` |
+| `road_blockage` | `DEPT-TRAFFIC`, `DEPT-PUBLICWORKS` |
+| `accident` | `DEPT-EMER`, `DEPT-TRAFFIC` |
+| `other` | `DEPT-GEN` |
+
+**4.10.3 LLM tool output schemas (Pydantic)**
+
+```python
+class ClassificationResult(BaseModel):
+    incidentType: Literal["road_blockage","power_outage","water_leak","accident","other"]
+    severity: Literal["low","medium","high","critical"]
+    urgencyScore: int = Field(ge=1, le=10)
+    affectedRadius: int
+    estimatedDuration: int
+    classificationRationale: str
+
+class ResolvedConflict(BaseModel):
+    conflictType: str
+    resolution: ClassificationResult  # winning interpretation
+    confidence: float = Field(ge=0, le=1)
+    rationale: str
+    mergedIncidentIds: list[str]
+
+class NotificationDrafts(BaseModel):
+    operator_alert: str
+    public_announcement: str  # max 280 chars
+    department_ticket: str
+```
+
+**4.10.4 LLM system prompts (anchors — extend in code, do not contradict)**
+
+- **IncidentClassifier:** "You are a city operations analyst for NovaCivitas. Classify from description + source metadata. Prefer causal mechanism over symptoms (pipe breach vs surface flooding)."
+- **ContradictionResolver:** "You are an evidence evaluator. Score sources using credibility table and recency. Output JSON only."
+- **NotificationDraft:** "Three audiences: operator (technical), public (plain, ≤280 chars), department (actionable ticket)."
+
+**Temperature:** `0.2` for classifier and resolver; `0.4` for notifications.
+
+**4.10.5 GeoNormalizerTool**
+
+- Input: `rawAddress: str`
+- Fuzzy match against `novacivitas.json` → `districts[].roads[]` and landmarks
+- Output: `{ lat, lng, matchedLocation, confidence }`
+- If `confidence < 0.3` → caller sets `requiresLocationClarification=true` (Section 13 scenario 3)
+
+**4.10.6 ResourceMatcherTool**
+
+- Filter: `status==available`, `skills` contains incident type (or department default)
+- Sort: Haversine distance from `incident.coordinates` to `resource.homeBase`
+- Return top 2; exclude double-booked crews
+- Empty → `resourceUnavailable=true`, compute `estimatedAvailableAt` from assigned incident `estimatedDuration`
+
+**4.11 Action Chain Template (Code Constant)**
+
+Every `IncidentPlan` gets 3--5 steps in this order (skip road step if not applicable):
+
+| step | type | condition |
+|------|------|-----------|
+| 1 | `validate_incident` | always |
+| 2 | `notify_department` | always |
+| 3 | `dispatch_crew` | unless `resourceUnavailable` |
+| 4 | `manage_road_impact` | `water_leak` or `road_blockage` |
+| 5 | `schedule_followup` | always; `scheduledAt = now + estimatedDuration` (clamp 30--120 min) |
+
+**Constraint repair order:** (1) swap to cheaper resource → (2) defer non-critical step → (3) proceed with `budgetExceeded=true` flag.
+
+**4.12 FastAPI Route Handler Pattern**
+
+```python
+@router.post("/plan")
+async def create_plan(body: PlanRequest, mode: str = "full"):
+    if mode == "baseline":
+        return baseline_service.plan(body)  # Section 14 — no LangGraph
+    graph = triage_plan.build_graph()
+    result = await graph.ainvoke({"request": body, "trace_steps": []})
+    if result.get("error"):
+        raise HTTPException(...)
+    return result["plan_summary"]
+```
+
+Same pattern for `/ingest`, `/simulate`. Always return Pydantic `model_dump(mode="json")` for mobile type parity.
+
+**4.13 Agent Development Conventions (Vibe Coding Rules)**
+
+1. **Read `plan.md` first** — If code disagrees with this file, fix the code (unless a human updates the plan).
+2. **Do not add business logic to `mobile/`** — Only presentation, API hooks, animation.
+3. **Every new node needs a trace step** — Judges validate Agent Trace screen, not just happy-path JSON.
+4. **Preserve demo incident IDs** — Section 11 seeds must produce contradiction between Market Quarter incidents (web vs csv).
+5. **Use `MOCK_LLM=true` for UI work** — Mobile devs should not burn API quota.
+6. **Commit smoke test green** — `scripts/smoke_test.sh` must pass before claiming backend done.
+7. **Error codes are part of the contract** — Section 8 tables are exhaustive; map `ApiError.code` to HTTP status in routes.
+8. **Baseline endpoint** — `/plan?mode=baseline` must stay keyword-only (Section 14); never call LLM in baseline path.
+
+**4.14 Observability & Demo Exports**
+
+| Artifact | Path | When |
+|----------|------|------|
+| IDE task plan | repo root or `docs/antigravity/task.md` | Submission |
+| Runtime trace JSON | `docs/demo-trace-{planId}.json` | After successful demo rehearsal |
+| FastAPI logs | stdout | `LOG_LEVEL=DEBUG` during Scene 3--7 rehearsal |
+
+Log fields per LLM call: `planId`, `incidentId`, `tool`, `latency_ms`, `tokens` (if available), `fallback_used`.
+
+**4.15 Challenge 1 Criteria → Code Locations (Judge Map)**
+
+| Criterion | Where implemented |
+|-----------|-------------------|
+| 5 input types | `ingest` route + `sourceType` enum + Section 11 seed script |
+| Insight extraction | `classify_all_incidents` node + `IncidentClassifier` tool |
+| Implications / impact | `affectedRadius`, road impacts in `build_action_chains` |
+| Recommended actions | `IncidentPlan.actionChain` |
+| Simulated execution | `simulate` graph + `SimulationRun` |
+| Before/after | `beforeState` / `afterState` + mobile SimulationView |
+| Transparent workflow | `trace_steps` → GET `/trace` → AgentTrace screen |
+| Contradiction handling | `detect_contradictions` + `ContradictionResolver` |
+| Constraints | `check_constraints` node |
+| Failure recovery | `inject_failure_and_retry` + Section 13 #1 |
 
 **Section 5 --- Data Models**
 
@@ -1745,20 +2145,22 @@ Total sprint window: 36 hours. Team: Developer A (Antigravity + Backend), Develo
 ---
 
   **Task**                                                                                             **Owner**   **Priority**
-  Create Google Antigravity workspace \'CityIncidentWorkspace\'                                        Dev A       MVP
-  Initialize React Native + Expo project with TypeScript template                                      Dev B       MVP
-  Install dependencies: React Navigation, NativeWind, react-native-maps, React Query, Zustand, Axios   Dev B       MVP
-  Set up NovaCivitas dataset JSON file in Antigravity workspace state                                  Dev A       MVP
-  Configure .env file with Antigravity base URL placeholder                                            Dev B       MVP
+  Scaffold `backend/` per Section 3.5 (FastAPI + LangGraph + pyproject)                                Dev A       MVP
+  Scaffold `mobile/` React Native + Expo TypeScript template                                           Dev B       MVP
+  Copy `novacivitas.json` + implement `WorkspaceStore` load on startup                                 Dev A       MVP
+  Install mobile deps: React Navigation, NativeWind, react-native-maps, React Query, Zustand, Axios   Dev B       MVP
+  Configure `backend/.env` (GOOGLE_API_KEY) and `mobile/.env` (EXPO_PUBLIC_API_BASE_URL)               Dev A + B   MVP
+  Export Antigravity IDE artifacts to `docs/antigravity/` (task.md, implementation_plan, walkthrough)  Dev A       MVP (submission)
 
 ---
 
-**Phase 1 --- Antigravity Flows (Hours 2--12)**
+**Phase 1 --- LangGraph Flows (Hours 2--12)**
 
 ---
 
   **Task**                                                                              **Owner**   **Priority**
-  Build IngestIncidentFlow: validate, normalize, GeoNormalizerTool, persist             Dev A       MVP
+  Implement graphs per Section 4.6--4.8 (ingest, triage_plan, simulate, trace)        Dev A       MVP
+  Build IngestIncidentFlow nodes: validate, normalize, GeoNormalizerTool, persist       Dev A       MVP
   Build IncidentClassifierTool (LLM prompt, JSON schema output)                         Dev A       MVP
   Build TriageAndPlanFlow: classify, contradiction detection, routing, resource match   Dev A       MVP
   Build ContradictionResolverTool (LLM prompt with credibility scoring)                 Dev A       MVP
@@ -1857,7 +2259,7 @@ transparent reasoning traces --- all orchestrated through Google Antigravity.
 
 \#\# Architecture
 
-Mobile App (React Native + Expo) → HTTP REST → Google Antigravity Workspace
+Mobile App (React Native + Expo) → HTTP REST → FastAPI + LangGraph backend (Cloud Run / Render)
 
 → In-Memory Workspace State (NovaCivitas Dataset)
 
@@ -1865,13 +2267,13 @@ Three layers:
 
 1\. React Native + Expo mobile app: pure presentation layer
 
-2\. Google Antigravity workspace: all agentic logic (4 flows)
+2\. FastAPI + LangGraph backend: all agentic logic (4 flows) — *code authored with Google Antigravity IDE*
 
 3\. In-memory workspace state: NovaCivitas synthetic city dataset
 
 \#\# Antigravity Role
 
-Google Antigravity IDE was used to vibe-code the entire backend and mobile app from scratch. The custom FastAPI + LangGraph backend handles all agentic business logic at runtime.
+Google Antigravity IDE was used to vibe-code the entire backend and mobile app from scratch. At runtime the mobile app calls our FastAPI endpoints; LangGraph executes Ingest, Triage, Simulate, and Trace assembly.
 
 \- IngestIncidentFlow: normalizes incoming incident reports
 
@@ -1881,7 +2283,7 @@ Google Antigravity IDE was used to vibe-code the entire backend and mobile app f
 
 \- GetAgentTraceFlow: returns structured reasoning tree for transparency
 
-The mobile app calls Antigravity HTTP endpoints only. No business logic exists in the app.
+The mobile app calls `/v1` REST endpoints only. No business logic exists in the app.
 
 \#\# Flows Description
 
@@ -1913,7 +2315,7 @@ Maps: react-native-maps with OpenStreetMap tiles
 
 State: React Query + Zustand
 
-Agent Layer: Google Antigravity (\[workspace URL\])
+Backend: FastAPI + LangGraph (\[DEPLOYED_BACKEND_URL\]/v1)
 
 \#\# Setup Instructions
 
@@ -1921,27 +2323,29 @@ Agent Layer: Google Antigravity (\[workspace URL\])
 
 2\. Run: npm install
 
-3\. Copy .env.example to .env and set ANTIGRAVITY_BASE_URL=\[your endpoint\]
+3\. Copy .env.example to .env and set EXPO_PUBLIC_API_BASE_URL=\[backend /v1 URL\]
 
-4\. Run: npx expo start
+4\. Backend: cd backend && uv sync && uv run uvicorn app.main:app --port 8000
 
-5\. Scan QR code with Expo Go, or run: npx expo build:android for APK
+5\. Mobile: npx expo start
+
+6\. Scan QR code with Expo Go, or run: npx expo build:android for APK
 
 \#\# Data Sources & Schemas
 
 NovaCivitas synthetic city dataset: 5 districts, 10 roads, 5 departments, 8 crews
 
-5 sample incidents (one per input type) pre-loaded in Antigravity workspace state
+5 sample incidents (one per input type) pre-loaded via `scripts/seed_demo_incidents.py`
 
 See Section 10 and Section 11 of PRD for full schemas and sample data
 
 \#\# APIs Used
 
-Google Antigravity (LLM tools): IncidentClassifierTool, ContradictionResolverTool,
+Gemini via LangChain (LLM tools): IncidentClassifierTool, ContradictionResolverTool,
 
 NotificationDraftTool
 
-Google Antigravity (custom tools): RoutingTool, ResourceMatcherTool, GeoNormalizerTool
+Python custom tools: RoutingTool, ResourceMatcherTool, GeoNormalizerTool
 
 No external third-party APIs required for MVP
 
@@ -2046,5 +2450,4 @@ This checklist maps every hackathon submission requirement to the specific artif
 ---
 
 *--- End of Document ---*
-
 City Incident-to-Response Routing Agent \| CityIRA \| Google Antigravity Hackathon 2026
