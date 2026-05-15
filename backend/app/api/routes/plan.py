@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Query
+"""POST /plan — triggers triage plan graph or baseline keyword plan."""
+
+from fastapi import APIRouter, HTTPException, Query
 
 from app.graphs.triage_plan import build_graph
 from app.models.requests import PlanRequest
@@ -10,9 +12,27 @@ router = APIRouter()
 
 @router.post("/plan")
 async def create_plan(body: PlanRequest, mode: str = Query("agent")):
-    if mode == "baseline":
-        summary = run_baseline_plan(get_store(), body.incidentIds)
-        return summary
-    graph = build_graph()
-    result = await graph.ainvoke({"request": body, "trace_steps": []})
-    return result["plan_summary"]
+    try:
+        if mode == "baseline":
+            summary = run_baseline_plan(get_store(), body.incidentIds)
+            return summary.model_dump(mode="json")
+
+        graph = build_graph()
+        result = await graph.ainvoke({"request": body, "trace_steps": []})
+
+        plan_summary = result.get("plan_summary")
+        if not plan_summary:
+            raise HTTPException(
+                status_code=500,
+                detail={"code": "FLOW_EXECUTION_ERROR", "message": "Failed to generate plan"},
+            )
+
+        return plan_summary.model_dump(mode="json")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={"code": "FLOW_EXECUTION_ERROR", "message": str(e)},
+        )
