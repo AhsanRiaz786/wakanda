@@ -1,42 +1,20 @@
-"""LLM tools — uses Gemini when MOCK_LLM=false; fixtures when true."""
+"""LLM tools — stable public facade used by Eagle's nodes and Shaka's tests.
 
-from app.config import settings
-from app.models.enums import IncidentType, Severity, SourceType
+Flows and nodes import from here; they NEVER import GeminiLLMProvider directly.
+Function signatures are frozen — do not rename or change return shapes.
+
+Wave 0: classify_incident + draft_notifications delegate to factory.
+        resolve_contradiction still uses legacy scoring (Agent A wires to provider).
+Agent A: wires resolve_contradiction to provider.resolve_contradiction().
+"""
+
+from app.llm.factory import get_llm_provider
 from app.models.incident import Incident
 
+# SOURCE_WEIGHT kept here for backward-compat imports in plan_flow / simulate_flow
+from app.models.enums import SourceType
 
-def _mock_classify(incident: Incident) -> dict:
-    text = incident.description.lower()
-    if "water" in text or "pipe" in text or "pressure" in text:
-        itype, sev, urgency = IncidentType.WATER_LEAK, Severity.HIGH, 8
-        rationale = "Water or pipe-related signals in description."
-    elif "power" in text or "electric" in text or "arc" in text:
-        itype, sev, urgency = IncidentType.POWER_OUTAGE, Severity.HIGH, 7
-        rationale = "Electrical incident indicators."
-    elif "accident" in text or "truck" in text or "injured" in text:
-        itype, sev, urgency = IncidentType.ACCIDENT, Severity.HIGH, 9
-        rationale = "Vehicular accident reported."
-    elif "congestion" in text or "traffic" in text:
-        itype, sev, urgency = IncidentType.ROAD_BLOCKAGE, Severity.MEDIUM, 6
-        rationale = "Traffic congestion pattern."
-    elif "flood" in text:
-        itype, sev, urgency = IncidentType.WATER_LEAK, Severity.HIGH, 7
-        rationale = "Flooding may indicate underlying water infrastructure failure."
-    else:
-        itype, sev, urgency = IncidentType.OTHER, Severity.MEDIUM, 5
-        rationale = "General incident classification."
-
-    return {
-        "incidentType": itype,
-        "severity": sev,
-        "urgencyScore": urgency,
-        "affectedRadius": 150,
-        "estimatedDuration": 90,
-        "classificationRationale": rationale,
-    }
-
-
-SOURCE_WEIGHT = {
+SOURCE_WEIGHT: dict[SourceType, float] = {
     SourceType.CSV_JSON: 0.95,
     SourceType.PDF_REPORT: 0.90,
     SourceType.TABLE_DASHBOARD: 0.85,
@@ -46,38 +24,48 @@ SOURCE_WEIGHT = {
 
 
 def classify_incident(incident: Incident) -> dict:
-    if settings.mock_llm or not settings.google_api_key:
-        return _mock_classify(incident)
-    # TODO: wire langchain-google-genai structured output
-    return _mock_classify(incident)
+    """Classify an incident. Returns a dict compatible with Incident field names.
+
+    Delegates to the active LLMProvider (mock or Gemini).
+    Return shape:
+        {
+            "incidentType": IncidentType,
+            "severity": Severity,
+            "urgencyScore": int,
+            "affectedRadius": int,
+            "estimatedDuration": int,
+            "classificationRationale": str,
+        }
+    """
+    result = get_llm_provider().classify(incident)
+    return result.to_incident_dict()
 
 
 def resolve_contradiction(incidents: list[Incident]) -> dict:
-    """Prefer csv_json sensor over web_article for Market Quarter demo."""
-    scored = []
-    for inc in incidents:
-        weight = SOURCE_WEIGHT.get(inc.sourceType, 0.7)
-        scored.append((weight, inc))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    winner = scored[0][1]
-    result = classify_incident(winner)
-    if winner.sourceType == SourceType.CSV_JSON:
-        result["incidentType"] = IncidentType.WATER_LEAK
-        result["classificationRationale"] = (
-            "Utility sensor (PIPE-MQ-14) shows pipe breach; flooding is a symptom, not a flood event."
-        )
-    return {
-        "conflictType": "severity_and_type_mismatch",
-        "resolution": result,
-        "confidence": 0.91,
-        "rationale": "Higher-credibility sensor data selected over secondary media narrative.",
-        "mergedIncidentIds": [i.incidentId for i in incidents],
-    }
+    """Resolve a contradiction group. Returns a dict compatible with Incident.resolvedConflict.
+
+    Agent A: delegates to provider.resolve_contradiction() which enriches rationale via LLM.
+    Winner selection is deterministic.
+
+    Return shape:
+        {
+            "conflictType": str,
+            "resolution": dict,
+            "confidence": float,
+            "lowConfidenceResolution": bool,
+            "rationale": str,
+            "mergedIncidentIds": list[str],
+        }
+    """
+    result = get_llm_provider().resolve_contradiction(incidents)
+    return result.to_legacy_dict()
 
 
 def draft_notifications(incident_id: str, incident_type: str) -> dict[str, str]:
-    return {
-        "operator_alert": f"INCIDENT {incident_id}: {incident_type} — crews dispatched per plan.",
-        "public_announcement": f"Service disruption reported. Avoid affected area. Updates to follow.",
-        "department_ticket": f"Dispatch required for {incident_id}. Type: {incident_type}.",
-    }
+    """Draft operator / public / department notifications.
+
+    Delegates to the active LLMProvider.
+    Return shape: {"operator_alert": str, "public_announcement": str, "department_ticket": str}
+    """
+    result = get_llm_provider().draft_notifications(incident_id, incident_type)
+    return result.to_legacy_dict()
