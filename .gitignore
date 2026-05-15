@@ -23,6 +23,7 @@ backend/**/*.egg-info/
 backend/.coverage
 backend/htmlcov/
 backend/uv.lock
+backend/venv/
 
 # Node / mobile
 mobile/node_modules/
@@ -55,3 +56,4 @@ docs/evidence/*.json
 # Antigravity screenshots (optional local only)
 docs/antigravity/screenshots/*
 !docs/antigravity/screenshots/.gitkeep
+
