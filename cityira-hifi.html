@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CityIRA — Hi-Fidelity Screens</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --green: #00D68F;
+  --green-dim: rgba(0,214,143,0.12);
+  --green-glow: rgba(0,214,143,0.25);
+  --bg: #060A0C;
+  --surface: #0D1419;
+  --surface2: #131C22;
+  --surface3: #1A2630;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #F0F4F3;
+  --text-muted: #6B8080;
+  --text-dim: #3D5555;
+  --crit: #FF4757;
+  --high: #FF8C42;
+  --med: #FFD60A;
+  --low: #4CC9F0;
+  --resolve: #00D68F;
+}
+
+body {
+  background: var(--bg);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  padding: 56px 48px 80px;
+  color: var(--text);
+}
+
+/* ——— PAGE HEADER ——— */
+.page-header {
+  margin-bottom: 56px;
+}
+.page-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.page-eyebrow::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--green);
+}
+.page-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.page-sub {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ——— GRID ——— */
+.screens-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 340px);
+  gap: 48px 40px;
+  justify-content: center;
+}
+
+/* ——— SCREEN WRAPPER ——— */
+.screen-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.screen-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+}
+.screen-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* ——— PHONE SHELL ——— */
+.phone {
+  width: 340px;
+  height: 736px;
+  background: #0D1419;
+  border-radius: 48px;
+  border: 1.5px solid rgba(255,255,255,0.1);
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 0 0 1px rgba(0,214,143,0.06),
+    0 40px 80px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+/* ——— STATUS BAR ——— */
+.status-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  z-index: 200;
+  font-family: 'Inter', sans-serif;
+}
+.status-bar .time {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.status-icons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sig { display: flex; align-items: flex-end; gap: 2px; height: 11px; }
+.sig span { width: 3px; background: var(--text); border-radius: 1px; opacity: 0.9; }
+.wifi-icon { width: 15px; height: 12px; }
+.batt {
+  width: 23px; height: 12px;
+  border: 1.5px solid rgba(255,255,255,0.6);
+  border-radius: 3px;
+  position: relative;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+.batt::after {
+  content: '';
+  position: absolute;
+  right: -5px; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 5px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 0 2px 2px 0;
+}
+.batt-fill {
+  background: var(--text);
+  height: 100%;
+  width: 72%;
+  border-radius: 1px;
+  opacity: 0.9;
+}
+
+/* Dynamic island */
+.dynamic-island {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 28px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 300;
+}
+
+/* Home indicator */
+.home-bar {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 5px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  z-index: 300;
+}
+
+/* ——— BOTTOM NAV ——— */
+.bottom-nav {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 84px;
+  background: rgba(8,14,18,0.97);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  padding-top: 12px;
+  z-index: 180;
+}
+.nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  position: relative;
+}
+.nav-tab svg { width: 22px; height: 22px; stroke-width: 1.8; }
+.nav-tab span { font-size: 10px; font-weight: 500; font-family: 'Inter', sans-serif; }
+.nav-active svg, .nav-active span { color: var(--green); }
+.nav-tab:not(.nav-active) svg, .nav-tab:not(.nav-active) span { color: var(--text-dim); }
+.nav-active-dot {
+  position: absolute;
+  top: -4px;
+  width: 20px;
+  height: 2px;
+  background: var(--green);
+  border-radius: 0 0 2px 2px;
+}
+.nav-dot {
+  position: absolute;
+  top: -2px; right: 18px;
+  width: 6px; height: 6px;
+  background: var(--crit);
+  border-radius: 50%;
+  border: 1.5px solid var(--surface);
+}
+
+/* ============================================================
+   SCREEN 1 — MAP DASHBOARD (Uber-style)
+   ============================================================ */
+
+/* Map tiles */
+.map-full {
+  position: absolute;
+  inset: 0;
+  background: #0B1820;
+  overflow: hidden;
+}
+/* Grid of city blocks */
+.map-full::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.road-h { position: absolute; height: 10px; background: #132028; border-top: 1px solid #1D2F3C; border-bottom: 1px solid #1D2F3C; }
+.road-v { position: absolute; width: 10px; background: #132028; border-left: 1px solid #1D2F3C; border-right: 1px solid #1D2F3C; }
+.road-main-h { position: absolute; height: 16px; background: #183040; border-top: 1px solid #2A4558; border-bottom: 1px solid #2A4558; }
+.road-main-v { position: absolute; width: 16px; background: #183040; border-left: 1px solid #2A4558; border-right: 1px solid #2A4558; }
+.city-block { position: absolute; background: #0E1E28; border-radius: 3px; }
+.park { position: absolute; background: rgba(0,214,143,0.06); border: 1px solid rgba(0,214,143,0.1); border-radius: 4px; }
+.water { position: absolute; background: rgba(76,201,240,0.08); border: 1px solid rgba(76,201,240,0.12); border-radius: 50%; }
+
+/* Map gradient fade at bottom */
+.map-fade {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 60%;
+  background: linear-gradient(to top, rgba(8,12,16,0.7) 0%, rgba(8,12,16,0) 100%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Incident markers */
+.marker {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.marker-inner {
+  width: 8px; height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  opacity: 0.9;
+}
+.m-crit { width: 24px; height: 24px; background: var(--crit); box-shadow: 0 0 0 6px rgba(255,71,87,0.25), 0 0 0 14px rgba(255,71,87,0.1); animation: pulse-crit 2s infinite; }
+.m-high { width: 20px; height: 20px; background: var(--high); box-shadow: 0 0 0 5px rgba(255,140,66,0.2); }
+.m-med { width: 18px; height: 18px; background: var(--med); box-shadow: 0 0 0 4px rgba(255,214,10,0.15); }
+.m-low { width: 16px; height: 16px; background: var(--low); }
+@keyframes pulse-crit {
+  0%,100% { box-shadow: 0 0 0 5px rgba(255,71,87,0.3), 0 0 0 12px rgba(255,71,87,0.12); }
+  50% { box-shadow: 0 0 0 9px rgba(255,71,87,0.2), 0 0 0 18px rgba(255,71,87,0.06); }
+}
+
+/* Floating tooltip on map */
+.map-tooltip {
+  position: absolute;
+  z-index: 50;
+  background: rgba(8,14,18,0.96);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,71,87,0.35);
+  border-radius: 14px;
+  padding: 10px 12px;
+  min-width: 150px;
+}
+.map-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 18px;
+  width: 12px; height: 12px;
+  background: rgba(8,14,18,0.96);
+  border-right: 1px solid rgba(255,71,87,0.35);
+  border-bottom: 1px solid rgba(255,71,87,0.35);
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+.tt-severity { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--crit); margin-bottom: 3px; display: flex; align-items: center; gap: 4px; }
+.tt-title { font-size: 11px; font-weight: 600; color: var(--text); margin-bottom: 2px; line-height: 1.3; }
+.tt-meta { font-size: 9px; color: var(--text-muted); }
+
+/* Top header bar on map */
+.map-top-bar {
+  position: absolute;
+  top: 48px; left: 16px; right: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.map-header-pill {
+  flex: 1;
+  background: rgba(8,14,18,0.92);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.city-pulse {
+  width: 8px; height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px var(--green-dim);
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.city-name { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--text); }
+.city-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+.icon-btn {
+  width: 42px; height: 42px;
+  background: rgba(8,14,18,0.92);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.icon-btn svg { width: 18px; height: 18px; stroke: var(--text-muted); stroke-width: 2; }
+
+/* Bottom sheet — Uber style */
+.bottom-sheet {
+  position: absolute;
+  bottom: 84px; left: 0; right: 0;
+  background: rgba(9,15,20,0.98);
+  backdrop-filter: blur(32px);
+  border-top: 1px solid var(--border2);
+  border-radius: 28px 28px 0 0;
+  z-index: 150;
+  overflow: hidden;
+}
+.sheet-handle {
+  width: 40px; height: 4px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+.filter-row {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filter-chip {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--border2);
+  color: var(--text-muted);
+  background: transparent;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+.filter-chip.active {
+  background: var(--green);
+  color: #041A10;
+  border-color: var(--green);
+}
+.kpi-strip {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 10px;
+}
+.kpi-item {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.kpi-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+.kpi-lbl {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+.inc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+}
+.sev-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.row-main { flex: 1; min-width: 0; }
+.row-title { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.sev-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+.run-btn {
+  margin: 10px 16px 16px;
+  background: var(--green);
+  color: #041A10;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  border-radius: 16px;
+  padding: 15px;
+  text-align: center;
+  font-family: 'Syne', sans-serif;
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.run-btn svg { width: 16px; height: 16px; fill: #041A10; }
+
+/* ============================================================
+   SCREEN 2 — INCIDENT DETAIL
+   ============================================================ */
+.detail-screen {
+  position: absolute;
+  inset: 0;
+  background: var(--surface);
+  overflow: hidden;
+}
+.detail-scroll {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  bottom: 84px;
+  overflow: hidden;
+}
+.detail-hero {
+  padding: 56px 20px 18px;
+  background: linear-gradient(180deg, rgba(255,71,87,0.08) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+}
+.back-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.back-row svg { width: 20px; height: 20px; stroke: var(--text-muted); stroke-width: 2; }
+.back-row span { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.inc-id { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-dim); }
+.sev-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 10px;
+}
+.detail-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+.detail-meta-row { display: flex; align-items: center; gap: 8px; }
+.detail-meta-tag {
+  font-size: 10px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.detail-meta-tag svg { width: 12px; height: 12px; stroke: var(--text-dim); stroke-width: 2; }
+
+/* Status stepper */
+.stepper {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 20px;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+}
+.step-circle {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  z-index: 2;
+  position: relative;
+  font-family: 'JetBrains Mono', monospace;
+}
+.step-line {
+  position: absolute;
+  top: 11px; left: 50%; right: -50%;
+  height: 2px;
+  z-index: 1;
+}
+.step-lbl { font-size: 8px; color: var(--text-dim); text-align: center; white-space: nowrap; font-weight: 500; }
+.step.done .step-circle { background: var(--green); color: #041A10; }
+.step.done .step-line { background: var(--green); }
+.step.active .step-circle { background: var(--high); color: #fff; }
+.step.active .step-line { background: var(--border); }
+.step.pending .step-circle { background: var(--surface3); border: 1.5px solid var(--border2); color: var(--text-dim); }
+.step.pending .step-line { background: var(--border); }
+
+/* Detail sections */
+.dsec { padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.dsec-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; font-family: 'JetBrains Mono', monospace; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.info-cell { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+.info-cell-k { font-size: 9px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+.info-cell-v { font-size: 11px; font-weight: 600; color: var(--text); }
+
+/* Action chain */
+.action-chain { display: flex; flex-direction: column; }
+.ac-step { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; position: relative; }
+.ac-step:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 15px; top: 34px;
+  width: 1.5px;
+  height: calc(100% - 28px);
+  background: var(--border);
+}
+.ac-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700; color: var(--text-muted);
+  flex-shrink: 0; margin-top: 1px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ac-num.done { background: rgba(0,214,143,0.1); border-color: var(--green); color: var(--green); }
+.ac-num.act { background: rgba(255,140,66,0.1); border-color: var(--high); color: var(--high); }
+.ac-body { flex: 1; }
+.ac-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.ac-desc { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+/* Contradiction card */
+.contra-card {
+  background: rgba(255,71,87,0.04);
+  border: 1px solid rgba(255,71,87,0.2);
+  border-radius: 14px;
+  padding: 12px;
+}
+.contra-header { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.contra-header svg { width: 14px; height: 14px; stroke: var(--crit); stroke-width: 2.5; }
+.contra-title { font-size: 11px; font-weight: 700; color: var(--crit); }
+.src-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.src-box { flex: 1; border-radius: 10px; padding: 8px; font-size: 10px; }
+.src-a { background: rgba(255,71,87,0.06); border: 1px solid rgba(255,71,87,0.18); }
+.src-b { background: rgba(0,214,143,0.05); border: 1px solid rgba(0,214,143,0.18); }
+.src-name { font-weight: 700; color: var(--text); margin-bottom: 2px; font-size: 11px; }
+.src-score { color: var(--text-muted); }
+.res-badge { background: rgba(0,214,143,0.08); border: 1px solid rgba(0,214,143,0.25); border-radius: 8px; padding: 6px 10px; font-size: 10px; color: var(--green); line-height: 1.4; }
+
+/* ============================================================
+   SCREEN 3 — REPORT INCIDENT (Location Pick)
+   ============================================================ */
+.report-screen {
+  position: absolute;
+  inset: 0;
+  background: #0B1820;
+  overflow: hidden;
+}
+.report-top-bar {
+  position: absolute;
+  top: 48px; left: 0; right: 0;
+  padding: 8px 16px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.close-btn {
+  width: 38px; height: 38px;
+  background: rgba(8,14,18,0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.close-btn svg { width: 18px; height: 18px; stroke: var(--text-muted); stroke-width: 2; }
+.report-title-pill {
+  flex: 1;
+  background: rgba(8,14,18,0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 10px 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Source type pills */
+.source-strip {
+  position: absolute;
+  top: 104px; left: 0; right: 0;
+  padding: 0 16px;
+  z-index: 120;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.src-pill {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(8,14,18,0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border2);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Inter', sans-serif;
+}
+.src-pill.active { background: var(--green-dim); border-color: rgba(0,214,143,0.4); color: var(--green); }
+.src-pill svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.5; }
+
+/* Centered location pin */
+.center-pin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pin-body {
+  width: 40px; height: 40px;
+  background: var(--green);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 24px rgba(0,214,143,0.45);
+}
+.pin-body svg { width: 16px; height: 16px; stroke: #041A10; stroke-width: 2.5; transform: rotate(45deg); }
+.pin-shadow { width: 20px; height: 6px; background: rgba(0,0,0,0.4); border-radius: 50%; margin-top: 4px; filter: blur(3px); }
+
+/* Accuracy ring around pin center */
+.acc-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px; height: 80px;
+  border: 2px solid rgba(0,214,143,0.25);
+  border-radius: 50%;
+  background: rgba(0,214,143,0.05);
+  z-index: 20;
+}
+
+/* Address label on map */
+.addr-label {
+  position: absolute;
+  z-index: 45;
+  top: 62%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(8,14,18,0.96);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.addr-label svg { width: 14px; height: 14px; stroke: var(--green); stroke-width: 2.5; }
+.addr-label span { font-size: 12px; color: var(--text); font-weight: 500; }
+
+/* Report bottom sheet */
+.report-sheet {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(9,15,20,0.98);
+  backdrop-filter: blur(32px);
+  border-radius: 28px 28px 0 0;
+  border-top: 1px solid var(--border2);
+  padding: 12px 16px 24px;
+  z-index: 150;
+}
+.report-field {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.report-field svg { width: 16px; height: 16px; stroke: var(--text-dim); stroke-width: 2; flex-shrink: 0; margin-top: 1px; }
+.field-text { flex: 1; }
+.field-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 3px; font-family: 'JetBrains Mono', monospace; }
+.field-val { font-size: 12px; color: var(--text); font-weight: 500; line-height: 1.4; }
+.field-placeholder { font-size: 12px; color: var(--text-dim); font-style: italic; }
+.report-extras { display: flex; gap: 8px; margin-bottom: 10px; }
+.report-extra {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.report-extra svg { width: 14px; height: 14px; stroke: var(--text-muted); stroke-width: 2; }
+
+/* ============================================================
+   SCREEN 4 — SIMULATION
+   ============================================================ */
+.sim-screen { position: absolute; inset: 0; background: var(--surface); overflow: hidden; }
+
+/* Crew icons on map */
+.crew {
+  position: absolute;
+  z-index: 35;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800;
+  border: 2px solid var(--green);
+  color: #041A10;
+  font-family: 'Syne', sans-serif;
+}
+
+/* Road closed/restricted overlays */
+.road-closed {
+  position: absolute;
+  height: 12px;
+  background: rgba(255,71,87,0.5);
+  border: 1px solid rgba(255,71,87,0.8);
+  z-index: 28;
+}
+.road-restr {
+  position: absolute;
+  height: 12px;
+  background: rgba(255,140,66,0.4);
+  border: 1px solid rgba(255,140,66,0.7);
+  z-index: 27;
+}
+
+.sim-live-badge {
+  position: absolute;
+  top: 56px; left: 16px;
+  z-index: 120;
+  background: rgba(0,214,143,0.1);
+  border: 1px solid rgba(0,214,143,0.3);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.live-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: blink 1.2s infinite; }
+
+/* BA toggle */
+.ba-toggle {
+  display: flex;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 8px 16px;
+}
+.ba-opt { flex: 1; text-align: center; padding: 8px; font-size: 11px; font-weight: 700; color: var(--text-dim); font-family: 'Inter', sans-serif; }
+.ba-act { background: var(--surface3); color: var(--text); border-radius: 10px; margin: 3px; }
+
+.sim-kpis { display: flex; gap: 8px; padding: 0 16px 8px; }
+.skpi {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.skpi-n { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600; color: var(--text); }
+.skpi-l { font-size: 8px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; font-weight: 600; }
+.delta { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 4px; margin-top: 2px; display: inline-block; font-family: 'JetBrains Mono', monospace; }
+.d-pos { background: rgba(0,214,143,0.1); color: var(--green); }
+.d-neg { background: rgba(255,71,87,0.1); color: var(--crit); }
+
+.sim-timeline { padding: 0 16px 8px; }
+.stl-label { font-size: 9px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+.ev { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-top: 1px solid var(--border); }
+.ev-icon { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ev-icon svg { width: 12px; height: 12px; stroke-width: 2.5; }
+.ev-body { flex: 1; }
+.ev-title { font-size: 11px; font-weight: 600; color: var(--text); }
+.ev-time { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+
+.fail-card {
+  margin: 0 16px 8px;
+  background: rgba(255,71,87,0.05);
+  border: 1px solid rgba(255,71,87,0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.fail-card svg { width: 14px; height: 14px; stroke: var(--crit); stroke-width: 2; flex-shrink: 0; margin-top: 1px; }
+.fail-text { font-size: 10px; color: #FF8C9C; line-height: 1.5; }
+.fail-text strong { display: block; color: var(--crit); font-weight: 700; margin-bottom: 2px; }
+
+/* ============================================================
+   SCREEN 5 — AGENT TRACE
+   ============================================================ */
+.trace-screen { position: absolute; inset: 0; background: var(--surface); overflow: hidden; }
+.trace-top {
+  padding: 56px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.trace-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.trace-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); }
+.trace-status { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--green); background: var(--green-dim); border: 1px solid rgba(0,214,143,0.25); border-radius: 6px; padding: 3px 8px; }
+.trace-stats { display: flex; gap: 8px; }
+.tstat { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 8px; text-align: center; }
+.tstat-n { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600; color: var(--text); }
+.tstat-l { font-size: 8px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+
+.flow-selector { display: flex; margin: 8px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.flow-opt { flex: 1; text-align: center; padding: 8px 4px; font-size: 10px; font-weight: 600; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.flow-opt.active { background: var(--surface3); color: var(--text); border-radius: 10px; margin: 2px; }
+
+.trace-tree { padding: 4px 16px; overflow-y: hidden; }
+.tnode {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  position: relative;
+}
+.tnode.indent { margin-left: 24px; }
+.tnode.indent::before {
+  content: '';
+  position: absolute;
+  left: -14px; top: 0; bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+.tnode-icon {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.tnode-icon svg { width: 12px; height: 12px; stroke-width: 2.5; }
+.ni-llm { background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.3); }
+.ni-llm svg { stroke: #A78BFA; }
+.ni-tool { background: rgba(76,201,240,0.1); border: 1px solid rgba(76,201,240,0.25); }
+.ni-tool svg { stroke: var(--low); }
+.ni-dec { background: rgba(255,214,10,0.08); border: 1px solid rgba(255,214,10,0.25); }
+.ni-dec svg { stroke: var(--med); }
+.ni-state { background: rgba(0,214,143,0.08); border: 1px solid rgba(0,214,143,0.2); }
+.ni-state svg { stroke: var(--green); }
+.ni-err { background: rgba(255,71,87,0.08); border: 1px solid rgba(255,71,87,0.2); }
+.ni-err svg { stroke: var(--crit); }
+.tnode-body { flex: 1; min-width: 0; }
+.tnode-name { font-size: 11px; font-weight: 600; color: var(--text); }
+.tnode-detail { font-size: 10px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tnode-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+.sbadge { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 5px; letter-spacing: 0.04em; font-family: 'JetBrains Mono', monospace; }
+.sb-ok { background: rgba(0,214,143,0.1); color: var(--green); }
+.sb-warn { background: rgba(255,214,10,0.1); color: var(--med); }
+.sb-err { background: rgba(255,71,87,0.1); color: var(--crit); }
+.tnode-ms { font-size: 9px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.rationale {
+  background: rgba(255,214,10,0.04);
+  border-left: 2px solid rgba(255,214,10,0.35);
+  border-radius: 0 6px 6px 0;
+  padding: 6px 10px;
+  margin: 3px 0 3px 34px;
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   SCREEN 6 — INCIDENT LIST
+   ============================================================ */
+.list-screen { position: absolute; inset: 0; background: var(--surface); overflow: hidden; }
+.list-top {
+  padding: 56px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.list-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+.search-bar svg { width: 16px; height: 16px; stroke: var(--text-dim); stroke-width: 2; }
+.search-bar span { font-size: 13px; color: var(--text-dim); }
+.sort-row { display: flex; align-items: center; gap: 8px; }
+.sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.sort-btn svg { width: 14px; height: 14px; stroke: var(--text-muted); stroke-width: 2; }
+.sf-row {
+  flex: 1;
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sf { padding: 5px 10px; border-radius: 8px; font-size: 10px; font-weight: 700; color: var(--text-dim); border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+.sf.active { background: var(--green-dim); border-color: rgba(0,214,143,0.3); color: var(--green); }
+
+.inc-cards { overflow-y: auto; height: calc(100% - 160px); }
+.inc-card {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  transition: background 0.2s;
+}
+.card-bar { width: 3px; flex-shrink: 0; }
+.card-icon { width: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.card-icon-inner {
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.card-icon-inner svg { width: 15px; height: 15px; stroke-width: 2; }
+.card-body { flex: 1; padding: 11px 8px 11px 0; min-width: 0; }
+.card-title { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.4; margin-bottom: 4px; }
+.card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
+.ctag { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 5px; font-family: 'JetBrains Mono', monospace; }
+.card-footer { display: flex; align-items: center; justify-content: space-between; }
+.ctime { font-size: 10px; color: var(--text-muted); }
+.cdept { font-size: 9px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+/* ——— DESIGN TOKENS ——— */
+.tokens {
+  margin-top: 72px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+}
+.tok-head {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+}
+.tok-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; }
+.tok-section-title { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 12px; font-family: 'JetBrains Mono', monospace; }
+.color-swatches { display: flex; flex-direction: column; gap: 6px; }
+.swatch-row { display: flex; align-items: center; gap: 8px; }
+.swatch { width: 24px; height: 24px; border-radius: 6px; }
+.swatch-name { font-size: 11px; color: var(--text-muted); }
+.font-demo { margin-bottom: 8px; }
+.font-demo-name { font-size: 10px; color: var(--text-dim); margin-bottom: 3px; font-family: 'JetBrains Mono', monospace; }
+.font-demo-sample { color: var(--text); font-size: 16px; }
+</style>
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="page-eyebrow">CityIRA · Urban Incident Response</div>
+  <div class="page-title">Hi-Fidelity Screens</div>
+  <div class="page-sub">6 screens · Redesigned design system · v2.0</div>
+</div>
+
+<!-- SCREEN GRID -->
+<div class="screens-grid">
+
+<!-- ==================== SCREEN 1: MAP DASHBOARD ==================== -->
+<div class="screen-wrap">
+  <div class="phone">
+    <div class="dynamic-island"></div>
+    <div class="home-bar"></div>
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="status-icons">
+        <div class="sig"><span style="height:4px"></span><span style="height:6px"></span><span style="height:8px"></span><span style="height:10px"></span></div>
+        <svg class="wifi-icon" viewBox="0 0 15 11" fill="white" opacity="0.9"><path d="M7.5 2.5C9.43 2.5 11.18 3.27 12.47 4.53L13.89 3.11C12.23 1.49 9.98.5 7.5.5C5.02.5 2.77 1.49 1.11 3.11L2.53 4.53C3.82 3.27 5.57 2.5 7.5 2.5Z"/><path d="M7.5 5.5C8.6 5.5 9.6 5.95 10.33 6.67L11.75 5.25C10.65 4.16 9.15 3.5 7.5 3.5C5.85 3.5 4.35 4.16 3.25 5.25L4.67 6.67C5.4 5.95 6.4 5.5 7.5 5.5Z"/><circle cx="7.5" cy="9.5" r="1.5"/></svg>
+        <div class="batt"><div class="batt-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- Full map background -->
+    <div class="map-full">
+      <!-- Main roads -->
+      <div class="road-main-h" style="top:38%;left:0;right:0;"></div>
+      <div class="road-main-h" style="top:60%;left:0;right:0;"></div>
+      <div class="road-main-v" style="left:30%;top:0;bottom:0;"></div>
+      <div class="road-main-v" style="left:65%;top:0;bottom:0;"></div>
+      <!-- Secondary roads -->
+      <div class="road-h" style="top:24%;left:0;right:0;"></div>
+      <div class="road-h" style="top:75%;left:0;right:0;"></div>
+      <div class="road-v" style="left:48%;top:0;bottom:0;"></div>
+      <div class="road-v" style="left:15%;top:0;bottom:0;"></div>
+      <!-- City blocks -->
+      <div class="city-block" style="top:8%;left:34%;width:10%;height:14%;"></div>
+      <div class="city-block" style="top:8%;left:51%;width:12%;height:13%;"></div>
+      <div class="city-block" style="top:26%;left:34%;width:10%;height:10%;"></div>
+      <div class="city-block" style="top:42%;left:16%;width:12%;height:16%;"></div>
+      <div class="city-block" style="top:42%;left:34%;width:10%;height:16%;"></div>
+      <div class="city-block" style="top:42%;left:51%;width:12%;height:16%;"></div>
+      <div class="city-block" style="top:62%;left:16%;width:12%;height:11%;"></div>
+      <div class="city-block" style="top:62%;left:34%;width:10%;height:11%;"></div>
+      <div class="city-block" style="top:10%;left:68%;width:20%;height:14%;"></div>
+      <div class="city-block" style="top:62%;left:68%;width:20%;height:11%;"></div>
+      <!-- Parks / water -->
+      <div class="park" style="top:8%;left:8%;width:5%;height:12%;"></div>
+      <div class="water" style="top:28%;left:68%;width:22%;height:18%;border-radius:30%;"></div>
+    </div>
+
+    <!-- Gradient fade -->
+    <div class="map-fade"></div>
+
+    <!-- Incident markers -->
+    <div class="marker m-crit" style="top:35%;left:28%;z-index:35;"><div class="marker-inner"></div></div>
+    <div class="marker m-high" style="top:50%;left:62%;z-index:35;"><div class="marker-inner"></div></div>
+    <div class="marker m-med" style="top:22%;left:50%;z-index:35;"><div class="marker-inner"></div></div>
+    <div class="marker m-med" style="top:60%;left:25%;z-index:35;"><div class="marker-inner"></div></div>
+    <div class="marker m-low" style="top:30%;left:72%;z-index:35;"><div class="marker-inner"></div></div>
+
+    <!-- Tooltip on critical marker -->
+    <div class="map-tooltip" style="top:22%;left:12%;width:148px;">
+      <div class="tt-severity">
+        <svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--crit)"/></svg>
+        Critical
+      </div>
+      <div class="tt-title">Water main burst</div>
+      <div class="tt-meta">Market Quarter · 2 min ago</div>
+    </div>
+
+    <!-- Top bar -->
+    <div class="map-top-bar">
+      <div class="map-header-pill">
+        <div class="city-pulse"></div>
+        <div>
+          <div class="city-name">NovaCivitas</div>
+          <div class="city-sub">5 active incidents</div>
+        </div>
+      </div>
+      <div class="icon-btn" style="position:relative;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="nav-dot"></div>
+      </div>
+    </div>
+
+    <!-- Bottom sheet -->
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <!-- Filter row -->
+      <div class="filter-row">
+        <div class="filter-chip active">All</div>
+        <div class="filter-chip">Road Block</div>
+        <div class="filter-chip">Water</div>
+        <div class="filter-chip">Power</div>
+        <div class="filter-chip">Accident</div>
+      </div>
+      <!-- KPIs -->
+      <div class="kpi-strip">
+        <div class="kpi-item"><div class="kpi-num" style="color:var(--crit)">5</div><div class="kpi-lbl">Open</div></div>
+        <div class="kpi-item"><div class="kpi-num" style="color:var(--high)">2</div><div class="kpi-lbl">Assigned</div></div>
+        <div class="kpi-item"><div class="kpi-num" style="color:var(--green)">3</div><div class="kpi-lbl">Resolved</div></div>
+      </div>
+      <!-- Incident rows -->
+      <div class="inc-row">
+        <div class="sev-dot" style="background:var(--crit);box-shadow:0 0 0 4px rgba(255,71,87,0.2);"></div>
+        <div class="row-main">
+          <div class="row-title">Water main burst — Market Quarter</div>
+          <div class="row-meta">Live Feed · 2 min ago · DEPT-UTIL</div>
+        </div>
+        <div class="sev-badge" style="background:rgba(255,71,87,0.1);color:var(--crit);border:1px solid rgba(255,71,87,0.2);">CRIT</div>
+      </div>
+      <div class="inc-row">
+        <div class="sev-dot" style="background:var(--high);"></div>
+        <div class="row-main">
+          <div class="row-title">Truck accident — Central Flyover</div>
+          <div class="row-meta">Emergency Call · 9 min ago · DEPT-EMER</div>
+        </div>
+        <div class="sev-badge" style="background:rgba(255,140,66,0.1);color:var(--high);border:1px solid rgba(255,140,66,0.2);">HIGH</div>
+      </div>
+      <div class="inc-row">
+        <div class="sev-dot" style="background:var(--med);"></div>
+        <div class="row-main">
+          <div class="row-title">Arcing panel — Industrial Zone</div>
+          <div class="row-meta">PDF Report · 22 min ago · DEPT-POWER</div>
+        </div>
+        <div class="sev-badge" style="background:rgba(255,214,10,0.1);color:var(--med);border:1px solid rgba(255,214,10,0.2);">MED</div>
+      </div>
+      <!-- CTA -->
+      <div class="run-btn">
+        <svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
+        Run Agent Plan
+      </div>
+    </div>
+
+    <!-- Bottom nav -->
+    <div class="bottom-nav">
+      <div class="nav-tab nav-active">
+        <div class="nav-active-dot"></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Map</span>
+      </div>
+      <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6" stroke-linecap="round"/><line x1="8" y1="12" x2="21" y2="12" stroke-linecap="round"/><line x1="8" y1="18" x2="21" y2="18" stroke-linecap="round"/><line x1="3" y1="6" x2="3.01" y2="6" stroke-linecap="round"/><line x1="3" y1="12" x2="3.01" y2="12" stroke-linecap="round"/><line x1="3" y1="18" x2="3.01" y2="18" stroke-linecap="round"/></svg><span>Incidents</span></div>
+      <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/></svg><span>Report</span></div>
+      <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Trace</span></div>
+    </div>
+  </div>
+  <div class="screen-label">Screen 01</div>
+  <div class="screen-name">Map Dashboard</div>
+</div>
+
+<!-- ==================== SCREEN 2: INCIDENT DETAIL ==================== -->
+<div class="screen-wrap">
+  <div class="phone">
+    <div class="dynamic-island"></div>
+    <div class="home-bar"></div>
+    <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><div class="batt"><div class="batt-fill"></div></div></div></div>
+
+    <div class="detail-screen">
+      <div class="detail-scroll">
+        <!-- Hero -->
+        <div class="detail-hero">
+          <div class="back-row">
+            <svg viewBox="0 0 24 24" fill="none"><polyline points="15 18 9 12 15 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Back</span>
+            <span class="inc-id">INC-20260515-0031</span>
+          </div>
+          <div class="sev-pill" style="background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.3);color:var(--crit);">
+            <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="var(--crit)"/></svg>
+            CRITICAL · Water Leak
+          </div>
+          <div class="detail-title">Water main burst near central market causing road flooding</div>
+          <div class="detail-meta-row">
+            <div class="detail-meta-tag"><svg viewBox="0 0 24 24" fill="none"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z" stroke-linecap="round"/><circle cx="12" cy="10" r="3"/></svg>Market Quarter (D-02)</div>
+            <div class="detail-meta-tag" style="margin-left:4px;"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14" stroke-linecap="round" stroke-linejoin="round"/></svg>2 min ago</div>
+          </div>
+        </div>
+
+        <!-- Stepper -->
+        <div class="stepper">
+          <div class="step done"><div class="step-circle">✓<div class="step-line"></div></div><div class="step-lbl">Reported</div></div>
+          <div class="step done"><div class="step-circle">✓<div class="step-line"></div></div><div class="step-lbl">Triaged</div></div>
+          <div class="step active"><div class="step-circle">3<div class="step-line"></div></div><div class="step-lbl">Assigned</div></div>
+          <div class="step pending"><div class="step-circle">4<div class="step-line"></div></div><div class="step-lbl">In Progress</div></div>
+          <div class="step pending"><div class="step-circle" style="border-right:none;">5</div><div class="step-lbl">Resolved</div></div>
+        </div>
+
+        <!-- Classification -->
+        <div class="dsec">
+          <div class="dsec-label">Classification</div>
+          <div class="info-grid">
+            <div class="info-cell"><div class="info-cell-k">Category</div><div class="info-cell-v">Water Leak</div></div>
+            <div class="info-cell"><div class="info-cell-k">Source</div><div class="info-cell-v">Live Feed</div></div>
+            <div class="info-cell"><div class="info-cell-k">District</div><div class="info-cell-v">D-02</div></div>
+            <div class="info-cell"><div class="info-cell-k">Confidence</div><div class="info-cell-v" style="color:var(--green);">92%</div></div>
+          </div>
+        </div>
+
+        <!-- Contradiction -->
+        <div class="dsec">
+          <div class="dsec-label">Contradiction Alert</div>
+          <div class="contra-card">
+            <div class="contra-header">
+              <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span class="contra-title">Conflicting reports detected</span>
+            </div>
+            <div class="src-row">
+              <div class="src-box src-a">
+                <div class="src-name">CCTV Feed</div>
+                <div class="src-score">Confidence: 94%</div>
+                <div style="margin-top:4px;font-size:9px;color:#FF8C9C;">Reports major flooding</div>
+              </div>
+              <div class="src-box src-b">
+                <div class="src-name">Citizen App</div>
+                <div class="src-score">Confidence: 61%</div>
+                <div style="margin-top:4px;font-size:9px;color:rgba(0,214,143,0.8);">Reports minor leak</div>
+              </div>
+            </div>
+            <div class="res-badge">
+              ✓ AI resolved: CCTV source weighted higher (visual evidence + recency)
+            </div>
+          </div>
+        </div>
+
+        <!-- Action chain -->
+        <div class="dsec" style="border-bottom:none;">
+          <div class="dsec-label">Agent Actions</div>
+          <div class="action-chain">
+            <div class="ac-step">
+              <div class="ac-num done">✓</div>
+              <div class="ac-body"><div class="ac-name">Classify & Triage</div><div class="ac-desc">Severity confirmed · Critical</div></div>
+            </div>
+            <div class="ac-step">
+              <div class="ac-num done">✓</div>
+              <div class="ac-body"><div class="ac-name">Notify DEPT-UTIL</div><div class="ac-desc">Push sent → 3 responders</div></div>
+            </div>
+            <div class="ac-step">
+              <div class="ac-num act">3</div>
+              <div class="ac-body"><div class="ac-name">Deploy Crew Alpha</div><div class="ac-desc">ETA 4 min · En route</div></div>
+            </div>
+            <div class="ac-step">
+              <div class="ac-num">4</div>
+              <div class="ac-body"><div class="ac-name">Close affected roads</div><div class="ac-desc">Awaiting crew arrival</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Map</span></div>
+        <div class="nav-tab nav-active">
+          <div class="nav-active-dot"></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6" stroke-linecap="round"/><line x1="8" y1="12" x2="21" y2="12" stroke-linecap="round"/><line x1="8" y1="18" x2="21" y2="18" stroke-linecap="round"/><line x1="3" y1="6" x2="3.01" y2="6" stroke-linecap="round"/><line x1="3" y1="12" x2="3.01" y2="12" stroke-linecap="round"/><line x1="3" y1="18" x2="3.01" y2="18" stroke-linecap="round"/></svg>
+          <span>Incidents</span>
+        </div>
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></svg><span>Report</span></div>
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Trace</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-label">Screen 02</div>
+  <div class="screen-name">Incident Detail</div>
+</div>
+
+<!-- ==================== SCREEN 3: REPORT INCIDENT ==================== -->
+<div class="screen-wrap">
+  <div class="phone">
+    <div class="dynamic-island"></div>
+    <div class="home-bar"></div>
+    <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><div class="batt"><div class="batt-fill"></div></div></div></div>
+
+    <div class="report-screen">
+      <!-- Map background -->
+      <div class="map-full">
+        <div class="road-main-h" style="top:42%;left:0;right:0;"></div>
+        <div class="road-main-v" style="left:35%;top:0;bottom:0;"></div>
+        <div class="road-h" style="top:28%;left:0;right:0;"></div>
+        <div class="road-h" style="top:58%;left:0;right:0;"></div>
+        <div class="road-v" style="left:60%;top:0;bottom:0;"></div>
+        <div class="city-block" style="top:10%;left:38%;width:18%;height:16%;"></div>
+        <div class="city-block" style="top:30%;left:38%;width:18%;height:10%;"></div>
+        <div class="city-block" style="top:45%;left:12%;width:20%;height:11%;"></div>
+        <div class="city-block" style="top:45%;left:38%;width:18%;height:11%;"></div>
+        <div class="city-block" style="top:10%;left:64%;width:22%;height:14%;"></div>
+        <div class="park" style="top:30%;left:64%;width:22%;height:10%;border-radius:6px;"></div>
+      </div>
+
+      <!-- Accuracy ring -->
+      <div class="acc-ring"></div>
+
+      <!-- Center pin — positioned slightly above center to simulate the map view -->
+      <div class="center-pin" style="top:52%;">
+        <div class="pin-body">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z" stroke-linecap="round"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="pin-shadow"></div>
+      </div>
+
+      <!-- Address label -->
+      <div class="addr-label" style="top:59%;left:50%;transform:translateX(-50%);">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z" stroke-linecap="round"/><circle cx="12" cy="10" r="3"/></svg>
+        <span>Market St. Junction, D-02</span>
+      </div>
+
+      <!-- Top bar -->
+      <div class="report-top-bar">
+        <div class="close-btn">
+          <svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round" stroke-linejoin="round"/><line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="report-title-pill">Report Incident</div>
+      </div>
+
+      <!-- Source type strip -->
+      <div class="source-strip">
+        <div class="src-pill active"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="3"/></svg>Camera</div>
+        <div class="src-pill"><svg viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>Text</div>
+        <div class="src-pill"><svg viewBox="0 0 24 24" fill="none"><path d="M9 19V6l12-3v13M9 19c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zM21 16c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>Audio</div>
+        <div class="src-pill"><svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8"/></svg>File</div>
+      </div>
+
+      <!-- Bottom input sheet -->
+      <div class="report-sheet">
+        <div class="sheet-handle"></div>
+        <!-- Location field -->
+        <div class="report-field" style="margin-top:12px;border-color:rgba(0,214,143,0.3);background:rgba(0,214,143,0.04);">
+          <svg viewBox="0 0 24 24" fill="none" style="stroke:var(--green)"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z" stroke-linecap="round"/><circle cx="12" cy="10" r="3"/></svg>
+          <div class="field-text">
+            <div class="field-label">Location</div>
+            <div class="field-val" style="color:var(--green)">Market St. Junction, District 02</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" style="stroke:var(--green);width:14px;height:14px;"><polyline points="9 18 15 12 9 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <!-- Description field -->
+        <div class="report-field">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="field-text">
+            <div class="field-label">Description</div>
+            <div class="field-placeholder">What happened? Describe the incident...</div>
+          </div>
+        </div>
+        <!-- Extras -->
+        <div class="report-extras">
+          <div class="report-extra">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Photo
+          </div>
+          <div class="report-extra">
+            <svg viewBox="0 0 24 24" fill="none"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            Video
+          </div>
+          <div class="report-extra">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Audio
+          </div>
+        </div>
+        <div class="run-btn">Submit Report</div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-label">Screen 03</div>
+  <div class="screen-name">Report Incident</div>
+</div>
+
+<!-- ==================== SCREEN 4: SIMULATION ==================== -->
+<div class="screen-wrap">
+  <div class="phone">
+    <div class="dynamic-island"></div>
+    <div class="home-bar"></div>
+    <div class="status-bar" style="color:#fff;"><span class="time">9:41</span><div class="status-icons"><div class="batt" style="color:#fff"><div class="batt-fill"></div></div></div></div>
+
+    <div class="sim-screen">
+      <!-- Map background -->
+      <div class="map-full" style="bottom:280px;">
+        <div class="road-main-h" style="top:38%;left:0;right:0;"></div>
+        <div class="road-main-h" style="top:62%;left:0;right:0;"></div>
+        <div class="road-main-v" style="left:32%;top:0;bottom:0;"></div>
+        <div class="road-main-v" style="left:66%;top:0;bottom:0;"></div>
+        <div class="road-h" style="top:24%;left:0;right:0;"></div>
+        <div class="road-v" style="left:50%;top:0;bottom:0;"></div>
+        <div class="city-block" style="top:8%;left:36%;width:10%;height:14%;"></div>
+        <div class="city-block" style="top:8%;left:54%;width:10%;height:14%;"></div>
+        <div class="city-block" style="top:42%;left:14%;width:14%;height:18%;"></div>
+        <div class="city-block" style="top:42%;left:36%;width:10%;height:18%;"></div>
+        <div class="city-block" style="top:42%;left:54%;width:10%;height:18%;"></div>
+        <div class="city-block" style="top:66%;left:14%;width:14%;height:14%;"></div>
+        <div class="city-block" style="top:10%;left:70%;width:22%;height:12%;"></div>
+        <div class="water" style="top:28%;left:70%;width:20%;height:16%;border-radius:40%;"></div>
+        <!-- Road closures -->
+        <div class="road-closed" style="top:calc(38% - 6px);left:20%;width:12%;"></div>
+        <div class="road-restr" style="top:calc(38% - 6px);left:32%;width:8%;"></div>
+      </div>
+
+      <!-- Live badge -->
+      <div class="sim-live-badge">
+        <div class="live-dot"></div>
+        SIMULATION LIVE
+      </div>
+
+      <!-- Incident marker -->
+      <div class="marker m-crit" style="top:36%;left:26%;z-index:36;"><div class="marker-inner"></div></div>
+
+      <!-- Crew icons -->
+      <div class="crew" style="top:28%;left:18%;background:rgba(0,214,143,0.15);">A</div>
+      <div class="crew" style="top:42%;left:55%;background:rgba(0,214,143,0.15);">B</div>
+
+      <!-- Map fade -->
+      <div class="map-fade" style="bottom:0;top:40%;background:linear-gradient(to top, rgba(13,20,25,1) 0%, rgba(13,20,25,0) 100%);"></div>
+
+      <!-- Bottom panel -->
+      <div style="position:absolute;bottom:84px;left:0;right:0;background:rgba(9,15,20,0.98);backdrop-filter:blur(32px);border-top:1px solid var(--border2);border-radius:28px 28px 0 0;z-index:150;overflow:hidden;">
+        <div class="sheet-handle"></div>
+        <!-- BA toggle -->
+        <div class="ba-toggle">
+          <div class="ba-opt ba-act">After</div>
+          <div class="ba-opt">Before</div>
+        </div>
+        <!-- KPIs -->
+        <div class="sim-kpis">
+          <div class="skpi">
+            <div class="skpi-n" style="color:var(--crit)">18</div>
+            <div class="skpi-l">Delay (min)</div>
+            <div class="delta d-neg">↓ 34%</div>
+          </div>
+          <div class="skpi">
+            <div class="skpi-n" style="color:var(--green)">2</div>
+            <div class="skpi-l">Crews Active</div>
+            <div class="delta d-pos">+1</div>
+          </div>
+          <div class="skpi">
+            <div class="skpi-n" style="color:var(--low)">74%</div>
+            <div class="skpi-l">Road Cap.</div>
+            <div class="delta d-neg">↓ 26%</div>
+          </div>
+        </div>
+        <!-- Failure card -->
+        <div class="fail-card">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div class="fail-text"><strong>Bottleneck Detected</strong>Crew B route blocked · Rerouting via Central Ave adds +4 min ETA</div>
+        </div>
+        <!-- Timeline -->
+        <div class="sim-timeline">
+          <div class="stl-label">Event Timeline</div>
+          <div class="ev">
+            <div class="ev-icon" style="background:rgba(0,214,143,0.1);border:1px solid rgba(0,214,143,0.2);">
+              <svg viewBox="0 0 24 24" fill="none" style="stroke:var(--green)"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="ev-body"><div class="ev-title">Crew Alpha dispatched</div><div class="ev-time">T+0:00 · En route to D-02</div></div>
+          </div>
+          <div class="ev">
+            <div class="ev-icon" style="background:rgba(255,140,66,0.1);border:1px solid rgba(255,140,66,0.2);">
+              <svg viewBox="0 0 24 24" fill="none" style="stroke:var(--high)"><path d="M18.36 6.64a9 9 0 11-12.73 0"/><line x1="12" y1="2" x2="12" y2="12" stroke-linecap="round"/></svg>
+            </div>
+            <div class="ev-body"><div class="ev-title">Roads A14 & A15 closed</div><div class="ev-time">T+1:20 · Traffic rerouted</div></div>
+          </div>
+          <div class="ev">
+            <div class="ev-icon" style="background:rgba(76,201,240,0.1);border:1px solid rgba(76,201,240,0.2);">
+              <svg viewBox="0 0 24 24" fill="none" style="stroke:var(--low)"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+            <div class="ev-body"><div class="ev-title">Crew Beta rerouted</div><div class="ev-time">T+2:45 · New ETA +4 min</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="nav-tab nav-active">
+          <div class="nav-active-dot"></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Map</span>
+        </div>
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6" stroke-linecap="round"/><line x1="8" y1="12" x2="21" y2="12" stroke-linecap="round"/><line x1="8" y1="18" x2="21" y2="18" stroke-linecap="round"/><line x1="3" y1="6" x2="3.01" y2="6" stroke-linecap="round"/><line x1="3" y1="12" x2="3.01" y2="12" stroke-linecap="round"/><line x1="3" y1="18" x2="3.01" y2="18" stroke-linecap="round"/></svg><span>Incidents</span></div>
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></svg><span>Report</span></div>
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Trace</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-label">Screen 04</div>
+  <div class="screen-name">Simulation</div>
+</div>
+
+<!-- ==================== SCREEN 5: AGENT TRACE ==================== -->
+<div class="screen-wrap">
+  <div class="phone">
+    <div class="dynamic-island"></div>
+    <div class="home-bar"></div>
+    <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><div class="batt"><div class="batt-fill"></div></div></div></div>
+
+    <div class="trace-screen">
+      <!-- Header -->
+      <div class="trace-top">
+        <div class="trace-head">
+          <div class="trace-title">Agent Trace</div>
+          <div class="trace-status">COMPLETED</div>
+        </div>
+        <div class="trace-stats">
+          <div class="tstat"><div class="tstat-n" style="color:#A78BFA;">6</div><div class="tstat-l">LLM Calls</div></div>
+          <div class="tstat"><div class="tstat-n" style="color:var(--low);">9</div><div class="tstat-l">Tool Uses</div></div>
+          <div class="tstat"><div class="tstat-n" style="color:var(--med);">3</div><div class="tstat-l">Decisions</div></div>
+          <div class="tstat"><div class="tstat-n" style="color:var(--text-muted);">2.4s</div><div class="tstat-l">Runtime</div></div>
+        </div>
+      </div>
+
+      <!-- Flow selector -->
+      <div class="flow-selector">
+        <div class="flow-opt active">Full Trace</div>
+        <div class="flow-opt">LLM Only</div>
+        <div class="flow-opt">Decisions</div>
+        <div class="flow-opt">Errors</div>
+      </div>
+
+      <!-- Trace tree -->
+      <div class="trace-tree">
+        <div class="tnode">
+          <div class="tnode-icon ni-llm"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+          <div class="tnode-body"><div class="tnode-name">Classify Incident</div><div class="tnode-detail">claude-sonnet-4-20250514 · 847 tokens</div></div>
+          <div class="tnode-right"><div class="sbadge sb-ok">SUCCESS</div><div class="tnode-ms">342ms</div></div>
+        </div>
+        <div class="tnode indent">
+          <div class="tnode-icon ni-tool"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M20 12h1M3 12H2M12 20v1M12 3V2"/></svg></div>
+          <div class="tnode-body"><div class="tnode-name">fetch_incident_data</div><div class="tnode-detail">INC-0031 · Live Feed + CCTV</div></div>
+          <div class="tnode-right"><div class="sbadge sb-ok">OK</div><div class="tnode-ms">89ms</div></div>
+        </div>
+        <div class="tnode">
+          <div class="tnode-icon ni-dec"><svg viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <div class="tnode-body"><div class="tnode-name">Resolve Contradiction</div><div class="tnode-detail">2 conflicting sources detected</div></div>
+          <div class="tnode-right"><div class="sbadge sb-warn">RESOLVED</div><div class="tnode-ms">218ms</div></div>
+        </div>
+        <div class="rationale">CCTV weighted over Citizen (conf. 94% vs 61%). Visual evidence corroborates major incident.</div>
+        <div class="tnode">
+          <div class="tnode-icon ni-llm"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+          <div class="tnode-body"><div class="tnode-name">Plan Response</div><div class="tnode-detail">claude-sonnet-4-20250514 · 1.2k tokens</div></div>
+          <div class="tnode-right"><div class="sbadge sb-ok">SUCCESS</div><div class="tnode-ms">621ms</div></div>
+        </div>
+        <div class="tnode indent">
+          <div class="tnode-icon ni-tool"><svg viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.1 1.18 2 2 0 012.08 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.18 6.18l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="tnode-body"><div class="tnode-name">notify_department</div><div class="tnode-detail">DEPT-UTIL · DEPT-TRAFFIC</div></div>
+          <div class="tnode-right"><div class="sbadge sb-ok">SENT</div><div class="tnode-ms">145ms</div></div>
+        </div>
+        <div class="tnode indent">
+          <div class="tnode-icon ni-state"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="tnode-body"><div class="tnode-name">update_incident_state</div><div class="tnode-detail">Status → Assigned</div></div>
+          <div class="tnode-right"><div class="sbadge sb-ok">DONE</div><div class="tnode-ms">43ms</div></div>
+        </div>
+        <div class="tnode indent">
+          <div class="tnode-icon ni-err"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+          <div class="tnode-body"><div class="tnode-name">route_crew_beta</div><div class="tnode-detail">Primary path blocked</div></div>
+          <div class="tnode-right"><div class="sbadge sb-err">RETRY</div><div class="tnode-ms">312ms</div></div>
+        </div>
+      </div>
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Map</span></div>
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6" stroke-linecap="round"/><line x1="8" y1="12" x2="21" y2="12" stroke-linecap="round"/><line x1="8" y1="18" x2="21" y2="18" stroke-linecap="round"/><line x1="3" y1="6" x2="3.01" y2="6" stroke-linecap="round"/><line x1="3" y1="12" x2="3.01" y2="12" stroke-linecap="round"/><line x1="3" y1="18" x2="3.01" y2="18" stroke-linecap="round"/></svg><span>Incidents</span></div>
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></svg><span>Report</span></div>
+        <div class="nav-tab nav-active">
+          <div class="nav-active-dot"></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Trace</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-label">Screen 05</div>
+  <div class="screen-name">Agent Trace</div>
+</div>
+
+<!-- ==================== SCREEN 6: INCIDENT LIST ==================== -->
+<div class="screen-wrap">
+  <div class="phone">
+    <div class="dynamic-island"></div>
+    <div class="home-bar"></div>
+    <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><div class="batt"><div class="batt-fill"></div></div></div></div>
+
+    <div class="list-screen">
+      <!-- Header -->
+      <div class="list-top">
+        <div class="list-title">Incidents</div>
+        <div class="search-bar">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Search incidents...</span>
+        </div>
+        <div class="sort-row">
+          <div class="sort-btn">
+            <svg viewBox="0 0 24 24" fill="none"><line x1="3" y1="6" x2="21" y2="6" stroke-linecap="round"/><line x1="3" y1="12" x2="15" y2="12" stroke-linecap="round"/><line x1="3" y1="18" x2="9" y2="18" stroke-linecap="round"/></svg>
+            Severity ↓
+          </div>
+          <div class="sf-row">
+            <div class="sf active">All</div>
+            <div class="sf">Reported</div>
+            <div class="sf">Triaged</div>
+            <div class="sf">Assigned</div>
+            <div class="sf">Resolved</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards -->
+      <div class="inc-cards">
+
+        <!-- CRITICAL -->
+        <div class="inc-card">
+          <div class="card-bar" style="background:var(--crit);"></div>
+          <div class="card-icon">
+            <div class="card-icon-inner" style="background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.2);">
+              <svg viewBox="0 0 24 24" fill="none" style="stroke:var(--crit)"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z" stroke-linecap="round"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-title">Water main burst near central market causing road flooding</div>
+            <div class="card-tags">
+              <div class="ctag" style="background:rgba(255,71,87,0.12);color:var(--crit);">CRITICAL</div>
+              <div class="ctag" style="background:rgba(0,214,143,0.08);color:var(--green);border:1px solid rgba(0,214,143,0.2);">Live Feed</div>
+              <div class="ctag" style="background:var(--surface2);color:var(--text-muted);">Market Qtr</div>
+            </div>
+            <div class="card-footer">
+              <div class="ctime">2 min ago</div>
+              <div class="cdept">DEPT-UTIL · DEPT-TRAFFIC</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HIGH -->
+        <div class="inc-card">
+          <div class="card-bar" style="background:var(--high);"></div>
+          <div class="card-icon">
+            <div class="card-icon-inner" style="background:rgba(255,140,66,0.1);border:1px solid rgba(255,140,66,0.2);">
+              <svg viewBox="0 0 24 24" fill="none" style="stroke:var(--high)"><path d="M18.36 6.64a9 9 0 11-12.73 0"/><line x1="12" y1="2" x2="12" y2="12" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-title">Truck accident on Central Flyover — 1 injured, ambulance en route</div>
+            <div class="card-tags">
+              <div class="ctag" style="background:rgba(255,140,66,0.12);color:var(--high);">HIGH</div>
+              <div class="ctag" style="background:rgba(255,71,87,0.08);color:#FCA5A5;border:1px solid rgba(255,71,87,0.2);">Emergency Call</div>
+            </div>
+            <div class="card-footer">
+              <div class="ctime">9 min ago</div>
+              <div class="cdept">DEPT-EMER</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MEDIUM -->
+        <div class="inc-card">
+          <div class="card-bar" style="background:var(--med);"></div>
+          <div class="card-icon">
+            <div class="card-icon-inner" style="background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.2);">
+              <svg viewBox="0 0 24 24" fill="none" style="stroke:var(--med)"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-title">Electrical panel arcing at Junction Box 7, Industrial Zone</div>
+            <div class="card-tags">
+              <div class="ctag" style="background:rgba(255,214,10,0.1);color:var(--med);">MEDIUM</div>
+              <div class="ctag" style="background:var(--surface2);color:var(--text-muted);">PDF Report</div>
+            </div>
+            <div class="card-footer">
+              <div class="ctime">22 min ago</div>
+              <div class="cdept">DEPT-POWER</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MEDIUM w/ contradiction -->
+        <div class="inc-card">
+          <div class="card-bar" style="background:var(--med);"></div>
+          <div class="card-icon">
+            <div class="card-icon-inner" style="background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.2);">
+              <svg viewBox="0 0 24 24" fill="none" style="stroke:var(--med)"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-title">Market Street flooding — conflicting reports from 2 sources</div>
+            <div class="card-tags">
+              <div class="ctag" style="background:rgba(255,214,10,0.1);color:var(--med);">MEDIUM</div>
+              <div class="ctag" style="background:rgba(255,140,66,0.08);color:var(--high);border:1px solid rgba(255,140,66,0.2);">⚡ Contradiction</div>
+            </div>
+            <div class="card-footer">
+              <div class="ctime">23 min ago</div>
+              <div class="cdept">DEPT-UTIL</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOW -->
+        <div class="inc-card">
+          <div class="card-bar" style="background:var(--low);"></div>
+          <div class="card-icon">
+            <div class="card-icon-inner" style="background:rgba(76,201,240,0.08);border:1px solid rgba(76,201,240,0.2);">
+              <svg viewBox="0 0 24 24" fill="none" style="stroke:var(--low)"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-title">Traffic congestion spike on Main Boulevard — 74% capacity</div>
+            <div class="card-tags">
+              <div class="ctag" style="background:rgba(76,201,240,0.1);color:var(--low);">LOW</div>
+              <div class="ctag" style="background:var(--surface2);color:var(--text-muted);">Dashboard</div>
+            </div>
+            <div class="card-footer">
+              <div class="ctime">15 min ago</div>
+              <div class="cdept">DEPT-TRAFFIC</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESOLVED -->
+        <div class="inc-card" style="opacity:0.45;">
+          <div class="card-bar" style="background:var(--green);"></div>
+          <div class="card-icon">
+            <div class="card-icon-inner" style="background:rgba(0,214,143,0.08);border:1px solid rgba(0,214,143,0.18);">
+              <svg viewBox="0 0 24 24" fill="none" style="stroke:var(--green)"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-title">Pothole on Heritage Avenue — repaired</div>
+            <div class="card-tags">
+              <div class="ctag" style="background:rgba(0,214,143,0.08);color:var(--green);">RESOLVED</div>
+              <div class="ctag" style="background:var(--surface2);color:var(--text-muted);">Citizen</div>
+            </div>
+            <div class="card-footer">
+              <div class="ctime">2 hrs ago</div>
+              <div class="cdept">DEPT-WORKS</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end inc-cards -->
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Map</span></div>
+        <div class="nav-tab nav-active">
+          <div class="nav-active-dot"></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6" stroke-linecap="round"/><line x1="8" y1="12" x2="21" y2="12" stroke-linecap="round"/><line x1="8" y1="18" x2="21" y2="18" stroke-linecap="round"/><line x1="3" y1="6" x2="3.01" y2="6" stroke-linecap="round"/><line x1="3" y1="12" x2="3.01" y2="12" stroke-linecap="round"/><line x1="3" y1="18" x2="3.01" y2="18" stroke-linecap="round"/></svg><span>Incidents</span>
+        </div>
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></svg><span>Report</span></div>
+        <div class="nav-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Trace</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-label">Screen 06</div>
+  <div class="screen-name">Incident List</div>
+</div>
+
+</div><!-- end grid -->
+
+<!-- ==================== DESIGN TOKENS ==================== -->
+<div class="tokens">
+  <div class="tok-head">// Design System Tokens</div>
+  <div class="tok-grid">
+    <!-- Colors -->
+    <div>
+      <div class="tok-section-title">Surface Palette</div>
+      <div class="color-swatches">
+        <div class="swatch-row"><div class="swatch" style="background:#060A0C;border:1px solid rgba(255,255,255,0.1);"></div><div class="swatch-name">bg · #060A0C</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:#0D1419;"></div><div class="swatch-name">surface · #0D1419</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:#131C22;"></div><div class="swatch-name">surface2 · #131C22</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:#1A2630;"></div><div class="swatch-name">surface3 · #1A2630</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:#00D68F;"></div><div class="swatch-name">primary · #00D68F</div></div>
+      </div>
+    </div>
+    <!-- Severity -->
+    <div>
+      <div class="tok-section-title">Severity Scale</div>
+      <div class="color-swatches">
+        <div class="swatch-row"><div class="swatch" style="background:#FF4757;"></div><div class="swatch-name">critical · #FF4757</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:#FF8C42;"></div><div class="swatch-name">high · #FF8C42</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:#FFD60A;"></div><div class="swatch-name">medium · #FFD60A</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:#4CC9F0;"></div><div class="swatch-name">low · #4CC9F0</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:#00D68F;"></div><div class="swatch-name">resolved · #00D68F</div></div>
+      </div>
+    </div>
+    <!-- Typography -->
+    <div>
+      <div class="tok-section-title">Typography</div>
+      <div class="font-demo">
+        <div class="font-demo-name">display</div>
+        <div class="font-demo-sample" style="font-family:'Syne',sans-serif;font-weight:700;">Syne 700</div>
+      </div>
+      <div class="font-demo">
+        <div class="font-demo-name">body</div>
+        <div class="font-demo-sample" style="font-family:'Inter',sans-serif;font-size:14px;">Inter 400</div>
+      </div>
+      <div class="font-demo">
+        <div class="font-demo-name">mono / data</div>
+        <div class="font-demo-sample" style="font-family:'JetBrains Mono',monospace;font-size:14px;">JetBrains Mono</div>
+      </div>
+    </div>
+    <!-- Trace types -->
+    <div>
+      <div class="tok-section-title">Trace Node Types</div>
+      <div class="color-swatches">
+        <div class="swatch-row"><div class="swatch" style="background:rgba(139,92,246,0.3);border:1px solid rgba(139,92,246,0.5);"></div><div class="swatch-name">LLM Call · #8B5CF6</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:rgba(76,201,240,0.3);border:1px solid rgba(76,201,240,0.5);"></div><div class="swatch-name">Tool Use · #4CC9F0</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:rgba(255,214,10,0.3);border:1px solid rgba(255,214,10,0.4);"></div><div class="swatch-name">Decision · #FFD60A</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:rgba(0,214,143,0.3);border:1px solid rgba(0,214,143,0.4);"></div><div class="swatch-name">State Update</div></div>
+        <div class="swatch-row"><div class="swatch" style="background:rgba(255,71,87,0.3);border:1px solid rgba(255,71,87,0.4);"></div><div class="swatch-name">Error / Retry</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
