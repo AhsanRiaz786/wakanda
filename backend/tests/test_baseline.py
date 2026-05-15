@@ -4,8 +4,6 @@ Verifies keyword routing, static plan generation, and ensures
 no LLM calls occur in baseline mode.
 """
 
-import pytest
-
 from app.models.enums import IncidentType, Severity
 from app.services.baseline import run_baseline_plan, _keyword_type, _dept_for_type
 

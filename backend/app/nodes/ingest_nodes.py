@@ -36,6 +36,7 @@ class IngestState(TypedDict, total=False):
 # Node: validate_input  →  I01
 # ---------------------------------------------------------------------------
 
+
 def validate_input(state: IngestState) -> IngestState:
     trace: list = list(state.get("trace_steps") or [])
     error = ingest_flow.validate_input(state["request"])
@@ -64,6 +65,7 @@ def validate_input(state: IngestState) -> IngestState:
 # Node: normalize_timestamp  →  I02
 # ---------------------------------------------------------------------------
 
+
 def normalize_timestamp(state: IngestState) -> IngestState:
     trace: list = list(state.get("trace_steps") or [])
     raw_ts = state["request"].rawTimestamp  # rawTimestamp is always present (Optional[str])
@@ -87,10 +89,13 @@ def normalize_timestamp(state: IngestState) -> IngestState:
 # Node: normalize_location  →  I03
 # ---------------------------------------------------------------------------
 
+
 def normalize_location(state: IngestState) -> IngestState:
     store = get_store()
     trace: list = list(state.get("trace_steps") or [])
-    coords, req_clarification, matched, conf = ingest_flow.normalize_location(store, state["request"])
+    coords, req_clarification, matched, conf = ingest_flow.normalize_location(
+        store, state["request"]
+    )
 
     if req_clarification:
         summary = f"Location clarification required (confidence: {conf:.2f})"
@@ -115,6 +120,7 @@ def normalize_location(state: IngestState) -> IngestState:
 # Node: sanitize_description  →  I04
 # ---------------------------------------------------------------------------
 
+
 def sanitize_description(state: IngestState) -> IngestState:
     trace: list = list(state.get("trace_steps") or [])
     clean_desc = ingest_flow.sanitize_description(state["request"].rawDescription)
@@ -132,6 +138,7 @@ def sanitize_description(state: IngestState) -> IngestState:
 # ---------------------------------------------------------------------------
 # Node: assign_id  →  I05
 # ---------------------------------------------------------------------------
+
 
 def assign_incident_id(state: IngestState) -> IngestState:
     """Named assign_incident_id to avoid shadowing Python builtins."""
@@ -152,6 +159,7 @@ def assign_incident_id(state: IngestState) -> IngestState:
 # ---------------------------------------------------------------------------
 # Node: persist_incident  →  I06
 # ---------------------------------------------------------------------------
+
 
 def persist_incident(state: IngestState) -> IngestState:
     store = get_store()

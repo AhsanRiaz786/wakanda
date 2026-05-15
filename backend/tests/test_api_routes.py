@@ -44,21 +44,27 @@ class TestRootAndHealth:
 
 class TestIngestRoute:
     def test_ingest_valid_incident(self, client):
-        resp = client.post("/v1/ingest", json={
-            "rawDescription": "Major water pipe burst near Market Quarter flooding three blocks",
-            "sourceType": "csv_json",
-            "rawCoordinates": {"lat": 33.7185, "lng": 73.0512},
-        })
+        resp = client.post(
+            "/v1/ingest",
+            json={
+                "rawDescription": "Major water pipe burst near Market Quarter flooding three blocks",
+                "sourceType": "csv_json",
+                "rawCoordinates": {"lat": 33.7185, "lng": 73.0512},
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["incidentId"].startswith("INC-")
         assert data["status"] == "reported"
 
     def test_ingest_short_description_returns_400(self, client):
-        resp = client.post("/v1/ingest", json={
-            "rawDescription": "short",
-            "sourceType": "csv_json",
-        })
+        resp = client.post(
+            "/v1/ingest",
+            json={
+                "rawDescription": "short",
+                "sourceType": "csv_json",
+            },
+        )
         assert resp.status_code == 400
         assert resp.json()["detail"]["code"] == "DESCRIPTION_REQUIRED"
 
@@ -76,16 +82,22 @@ class TestIngestRoute:
         assert resp2.json()["detail"]["code"] == "DUPLICATE_INCIDENT"
 
     def test_ingest_missing_source_type_returns_422(self, client):
-        resp = client.post("/v1/ingest", json={
-            "rawDescription": "Some incident without sourceType field specified here",
-        })
+        resp = client.post(
+            "/v1/ingest",
+            json={
+                "rawDescription": "Some incident without sourceType field specified here",
+            },
+        )
         assert resp.status_code == 422  # Pydantic validation
 
     def test_ingest_invalid_source_type_returns_422(self, client):
-        resp = client.post("/v1/ingest", json={
-            "rawDescription": "Some incident with invalid sourceType xyz value",
-            "sourceType": "invalid_type",
-        })
+        resp = client.post(
+            "/v1/ingest",
+            json={
+                "rawDescription": "Some incident with invalid sourceType xyz value",
+                "sourceType": "invalid_type",
+            },
+        )
         assert resp.status_code == 422
 
 
@@ -124,11 +136,14 @@ class TestSimulateRoute:
         plan_resp = client.post("/v1/plan", json={"planMode": "full"})
         plan_id = plan_resp.json()["planId"]
 
-        resp = client.post("/v1/simulate", json={
-            "planId": plan_id,
-            "simulationSpeed": "fast",
-            "overrides": {"forceApiFailure": True},
-        })
+        resp = client.post(
+            "/v1/simulate",
+            json={
+                "planId": plan_id,
+                "simulationSpeed": "fast",
+                "overrides": {"forceApiFailure": True},
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["runId"].startswith("SIM-")
@@ -136,9 +151,12 @@ class TestSimulateRoute:
         assert len(data["animationFrames"]) == 4
 
     def test_simulate_nonexistent_plan_returns_404(self, client):
-        resp = client.post("/v1/simulate", json={
-            "planId": "PLAN-FAKE-0000",
-        })
+        resp = client.post(
+            "/v1/simulate",
+            json={
+                "planId": "PLAN-FAKE-0000",
+            },
+        )
         assert resp.status_code == 404
         assert resp.json()["detail"]["code"] == "PLAN_NOT_FOUND"
 
@@ -217,6 +235,7 @@ class TestIncidentsRoute:
 class TestVoiceRouteGuards:
     def test_voice_rejects_unsupported_content_type(self, client, monkeypatch):
         from app.config import settings
+
         monkeypatch.setattr(settings, "deepgram_api_key", "test")
         monkeypatch.setattr(settings, "groq_api_key", "test")
         monkeypatch.setattr(settings, "elevenlabs_api_key", "test")
@@ -230,6 +249,7 @@ class TestVoiceRouteGuards:
 
     def test_voice_rejects_empty_audio(self, client, monkeypatch):
         from app.config import settings
+
         monkeypatch.setattr(settings, "deepgram_api_key", "test")
         monkeypatch.setattr(settings, "groq_api_key", "test")
         monkeypatch.setattr(settings, "elevenlabs_api_key", "test")

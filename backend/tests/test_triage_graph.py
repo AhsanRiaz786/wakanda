@@ -5,8 +5,6 @@ routing, resource matching, chain building, constraint checking,
 notification drafting, priority ordering, and full graph execution.
 """
 
-import pytest
-
 from app.flows.plan_flow import (
     fetch_open_incidents,
     classify_incidents,
@@ -17,7 +15,6 @@ from app.flows.plan_flow import (
     check_constraints,
     draft_all_notifications,
     prioritize,
-    persist_plan,
     run_plan,
     SEVERITY_MULT,
     SOURCE_CRED,
@@ -25,8 +22,6 @@ from app.flows.plan_flow import (
 from app.models.enums import (
     IncidentStatus,
     IncidentType,
-    Severity,
-    SourceType,
 )
 from app.models.requests import PlanConstraints, PlanRequest
 
@@ -76,7 +71,11 @@ class TestClassifyIncidents:
     def test_water_pipe_classified_as_water_leak(self, seeded_store):
         # Demo incident 3 (CSV_JSON): "PIPE-MQ-14 pressure anomaly — major pipe breach"
         incidents = fetch_open_incidents(seeded_store, None)
-        pipe_incident = [i for i in incidents if "pipe" in i.description.lower() or "pressure" in i.description.lower()]
+        pipe_incident = [
+            i
+            for i in incidents
+            if "pipe" in i.description.lower() or "pressure" in i.description.lower()
+        ]
         assert len(pipe_incident) >= 1
         classifications = classify_incidents(pipe_incident)
         cls = list(classifications.values())[0]
@@ -84,7 +83,11 @@ class TestClassifyIncidents:
 
     def test_accident_classified_correctly(self, seeded_store):
         incidents = fetch_open_incidents(seeded_store, None)
-        accident_incident = [i for i in incidents if "accident" in i.description.lower() or "truck" in i.description.lower()]
+        accident_incident = [
+            i
+            for i in incidents
+            if "accident" in i.description.lower() or "truck" in i.description.lower()
+        ]
         assert len(accident_incident) >= 1
         classifications = classify_incidents(accident_incident)
         cls = list(classifications.values())[0]
@@ -114,7 +117,11 @@ class TestContradictionDetection:
         them when types actually differ."""
         incidents = fetch_open_incidents(seeded_store, None)
         # Manually set one to WATER_LEAK and other to ROAD_BLOCKAGE to force a contradiction
-        mq_incidents = [i for i in incidents if abs(i.coordinates.lat - 33.7185) < 0.001 and i.coordinates is not None]
+        mq_incidents = [
+            i
+            for i in incidents
+            if abs(i.coordinates.lat - 33.7185) < 0.001 and i.coordinates is not None
+        ]
         if len(mq_incidents) >= 2:
             mq_incidents[0].incidentType = IncidentType.WATER_LEAK
             mq_incidents[1].incidentType = IncidentType.ROAD_BLOCKAGE
@@ -131,15 +138,22 @@ class TestContradictionDetection:
         """Two incidents 500m+ apart should NOT be grouped."""
         incidents = fetch_open_incidents(seeded_store, None)
         # Select incidents with different coordinates
-        distant = [i for i in incidents if i.coordinates and abs(i.coordinates.lat - 33.7145) < 0.001]
-        other_far = [i for i in incidents if i.coordinates and abs(i.coordinates.lat - 33.7215) < 0.001]
+        distant = [
+            i for i in incidents if i.coordinates and abs(i.coordinates.lat - 33.7145) < 0.001
+        ]
+        other_far = [
+            i for i in incidents if i.coordinates and abs(i.coordinates.lat - 33.7215) < 0.001
+        ]
         if distant and other_far:
             distant[0].incidentType = IncidentType.WATER_LEAK
             other_far[0].incidentType = IncidentType.ROAD_BLOCKAGE
             groups = detect_contradictions(distant + other_far)
             # These are ~800m apart, should NOT be grouped
             for g in groups:
-                assert not (distant[0].incidentId in g.incident_ids and other_far[0].incidentId in g.incident_ids)
+                assert not (
+                    distant[0].incidentId in g.incident_ids
+                    and other_far[0].incidentId in g.incident_ids
+                )
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -252,8 +266,10 @@ class TestConstraintCheck:
         routing_results = route_and_match(seeded_store, incidents, classifications)
         violations = check_constraints(routing_results, None)
         # Default budget is 50_000 PKR, cost is 9000 per resource — should not violate
-        assert all(v.constraintName != "maxBudgetPKR" or int(v.actualValue) > int(v.requiredValue)
-                    for v in violations)
+        assert all(
+            v.constraintName != "maxBudgetPKR" or int(v.actualValue) > int(v.requiredValue)
+            for v in violations
+        )
 
     def test_violation_when_budget_is_tiny(self, seeded_store):
         incidents = fetch_open_incidents(seeded_store, None)

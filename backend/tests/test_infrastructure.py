@@ -10,26 +10,38 @@ These tests cover the infrastructure layer that Zain built:
   • Workspace — WorkspaceStore CRUD operations
 """
 
-import os
 import pytest
 from datetime import datetime, timezone
 
-from app.llm.factory import get_llm_provider, reset_provider, _build_provider
+from app.llm.factory import get_llm_provider, reset_provider
 from app.llm.mock_provider import MockLLMProvider
 from app.llm.protocol import LLMProvider
-from app.llm.schemas import ClassificationResult, ResolvedConflict, NotificationDrafts, ContradictionGroup
+from app.llm.schemas import (
+    ClassificationResult,
+    ResolvedConflict,
+    NotificationDrafts,
+    ContradictionGroup,
+)
 from app.llm.base import invoke_with_retry, _is_non_retryable
 from app.models.enums import IncidentType, Severity, SourceType, IncidentStatus
-from app.models.incident import Coordinates, Incident
+from app.models.incident import Incident
 from app.services.ids import next_incident_id, next_plan_id, next_sim_id, next_trace_id
 
 
-def _make_inc(inc_id: str, desc: str = "test", source: SourceType = SourceType.CSV_JSON) -> Incident:
+def _make_inc(
+    inc_id: str, desc: str = "test", source: SourceType = SourceType.CSV_JSON
+) -> Incident:
     now = datetime.now(timezone.utc).isoformat()
     return Incident(
-        incidentId=inc_id, title=desc[:80], description=desc, rawDescription=desc,
-        sourceType=source, sourceLabel="Test",
-        status=IncidentStatus.REPORTED, createdAt=now, updatedAt=now,
+        incidentId=inc_id,
+        title=desc[:80],
+        description=desc,
+        rawDescription=desc,
+        sourceType=source,
+        sourceLabel="Test",
+        status=IncidentStatus.REPORTED,
+        createdAt=now,
+        updatedAt=now,
     )
 
 
@@ -41,6 +53,7 @@ def _make_inc(inc_id: str, desc: str = "test", source: SourceType = SourceType.C
 class TestLLMFactory:
     def test_returns_mock_when_mock_flag_set(self, monkeypatch):
         from app.config import settings
+
         monkeypatch.setattr(settings, "mock_llm", True)
         reset_provider()
         provider = get_llm_provider()
@@ -48,6 +61,7 @@ class TestLLMFactory:
 
     def test_returns_mock_when_api_key_missing(self, monkeypatch):
         from app.config import settings
+
         monkeypatch.setattr(settings, "mock_llm", False)
         monkeypatch.setattr(settings, "google_api_key", "")
         reset_provider()
@@ -205,14 +219,15 @@ class TestInvokeWithRetry:
 
     def test_non_retryable_errors_skip_retry(self):
         call_count = 0
+
         def _fail_auth():
             nonlocal call_count
             call_count += 1
             raise RuntimeError("UNAUTHENTICATED: bad key")
 
-        result = invoke_with_retry(
+        invoke_with_retry(
             invoke_fn=_fail_auth,
-            fallback_fn=lambda: ClassificationResult(),
+            fallback_fn=ClassificationResult,
             retries=3,
         )
         assert call_count == 1  # should not retry on auth error

@@ -5,8 +5,7 @@ description sanitization, duplicate detection, persistence, and full
 graph execution with trace-step accumulation.
 """
 
-import pytest
-from datetime import datetime, timezone
+from datetime import datetime
 
 from app.flows.ingest_flow import (
     validate_input,
@@ -14,11 +13,9 @@ from app.flows.ingest_flow import (
     normalize_location,
     sanitize_description,
     assign_id,
-    persist_incident,
     run_ingest,
 )
 from app.models.enums import IncidentStatus, IncidentType, SourceType
-from app.models.incident import Coordinates, Incident
 from app.models.requests import IngestRequest
 
 
@@ -244,7 +241,9 @@ class TestFullIngestFlow:
             (SourceType.REALTIME_FEED, "Truck accident on Central Flyover driver is injured"),
         ]
         for src, desc in sources:
-            body = IngestRequest(rawDescription=desc, sourceType=src, rawCoordinates={"lat": 33.72, "lng": 73.05})
+            body = IngestRequest(
+                rawDescription=desc, sourceType=src, rawCoordinates={"lat": 33.72, "lng": 73.05}
+            )
             inc, _, err, _ = run_ingest(fresh_store, body)
             assert err is None, f"Failed for {src}: {err}"
             assert inc.sourceType == src

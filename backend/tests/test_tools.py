@@ -4,18 +4,15 @@ Covers: GeoNormalizerTool, RoutingTool, ResourceMatcherTool,
 IncidentClassifierTool, ContradictionResolverTool, NotificationDraftTool.
 """
 
-import math
-import pytest
 from datetime import datetime, timezone, timedelta
 
 from app.tools.geo import geo_normalize
 from app.tools.routing import route_departments
 from app.tools.resources import match_resources
-from app.tools.llm_tools import classify_incident, resolve_contradiction, draft_notifications, SOURCE_WEIGHT
+from app.tools.llm_tools import classify_incident, resolve_contradiction, draft_notifications
 from app.tools.contradiction import (
     detect_contradiction_groups,
     score_source,
-    resolve_group,
     haversine_m,
 )
 from app.models.enums import IncidentType, IncidentStatus, Severity, SourceType
@@ -215,21 +212,35 @@ class TestDraftNotifications:
 class TestContradictionDetection:
     def test_nearby_different_types_detected(self):
         inc1 = _make_incident(
-            "INC-C1", "water pipe burst", lat=33.7185, lng=73.0512,
-            incident_type=IncidentType.WATER_LEAK, severity=Severity.HIGH,
+            "INC-C1",
+            "water pipe burst",
+            lat=33.7185,
+            lng=73.0512,
+            incident_type=IncidentType.WATER_LEAK,
+            severity=Severity.HIGH,
         )
         inc2 = _make_incident(
-            "INC-C2", "road blocked by debris", lat=33.7186, lng=73.0513,
-            incident_type=IncidentType.ROAD_BLOCKAGE, severity=Severity.MEDIUM,
+            "INC-C2",
+            "road blocked by debris",
+            lat=33.7186,
+            lng=73.0513,
+            incident_type=IncidentType.ROAD_BLOCKAGE,
+            severity=Severity.MEDIUM,
         )
         groups = detect_contradiction_groups([inc1, inc2])
         assert len(groups) >= 1
 
     def test_far_apart_not_grouped(self):
-        inc1 = _make_incident("INC-F1", "water pipe burst", lat=33.70, lng=73.00,
-                              incident_type=IncidentType.WATER_LEAK)
-        inc2 = _make_incident("INC-F2", "road blocked", lat=34.00, lng=74.00,
-                              incident_type=IncidentType.ROAD_BLOCKAGE)
+        inc1 = _make_incident(
+            "INC-F1",
+            "water pipe burst",
+            lat=33.70,
+            lng=73.00,
+            incident_type=IncidentType.WATER_LEAK,
+        )
+        inc2 = _make_incident(
+            "INC-F2", "road blocked", lat=34.00, lng=74.00, incident_type=IncidentType.ROAD_BLOCKAGE
+        )
         groups = detect_contradiction_groups([inc1, inc2])
         assert len(groups) == 0
 

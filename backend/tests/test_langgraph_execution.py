@@ -11,7 +11,7 @@ import pytest
 from app.graphs.ingest import build_graph as build_ingest_graph
 from app.graphs.triage_plan import build_graph as build_plan_graph
 from app.graphs.simulate import build_graph as build_simulate_graph
-from app.models.enums import IncidentStatus, SourceType
+from app.models.enums import SourceType
 from app.models.requests import (
     IngestRequest,
     PlanRequest,
@@ -29,14 +29,16 @@ class TestIngestGraph:
     @pytest.mark.asyncio
     async def test_valid_ingest_through_graph(self, fresh_store):
         graph = build_ingest_graph()
-        result = await graph.ainvoke({
-            "request": IngestRequest(
-                rawDescription="Major water pipe burst on Jinnah Avenue flooding streets",
-                sourceType=SourceType.CSV_JSON,
-                rawCoordinates={"lat": 33.72, "lng": 73.05},
-            ),
-            "trace_steps": [],
-        })
+        result = await graph.ainvoke(
+            {
+                "request": IngestRequest(
+                    rawDescription="Major water pipe burst on Jinnah Avenue flooding streets",
+                    sourceType=SourceType.CSV_JSON,
+                    rawCoordinates={"lat": 33.72, "lng": 73.05},
+                ),
+                "trace_steps": [],
+            }
+        )
         assert result.get("error") is None
         assert result["incident"] is not None
         assert result["incident"].incidentId.startswith("INC-")
@@ -46,13 +48,15 @@ class TestIngestGraph:
     @pytest.mark.asyncio
     async def test_validation_failure_short_circuits(self, fresh_store):
         graph = build_ingest_graph()
-        result = await graph.ainvoke({
-            "request": IngestRequest(
-                rawDescription="short",
-                sourceType=SourceType.PDF_REPORT,
-            ),
-            "trace_steps": [],
-        })
+        result = await graph.ainvoke(
+            {
+                "request": IngestRequest(
+                    rawDescription="short",
+                    sourceType=SourceType.PDF_REPORT,
+                ),
+                "trace_steps": [],
+            }
+        )
         assert result.get("error") is not None
         assert result["error"]["code"] == "DESCRIPTION_REQUIRED"
         # Should NOT have incident
@@ -61,14 +65,16 @@ class TestIngestGraph:
     @pytest.mark.asyncio
     async def test_graph_accumulates_trace_steps(self, fresh_store):
         graph = build_ingest_graph()
-        result = await graph.ainvoke({
-            "request": IngestRequest(
-                rawDescription="Electrical panel arcing in Industrial Zone junction box D-03",
-                sourceType=SourceType.PDF_REPORT,
-                rawCoordinates={"lat": 33.7145, "lng": 73.0432},
-            ),
-            "trace_steps": [],
-        })
+        result = await graph.ainvoke(
+            {
+                "request": IngestRequest(
+                    rawDescription="Electrical panel arcing in Industrial Zone junction box D-03",
+                    sourceType=SourceType.PDF_REPORT,
+                    rawCoordinates={"lat": 33.7145, "lng": 73.0432},
+                ),
+                "trace_steps": [],
+            }
+        )
         steps = result["trace_steps"]
         step_ids = [s["stepId"] for s in steps]
         assert "I01" in step_ids  # validate
@@ -98,10 +104,12 @@ class TestPlanGraph:
     @pytest.mark.asyncio
     async def test_full_plan_through_graph(self, seeded_store):
         graph = build_plan_graph()
-        result = await graph.ainvoke({
-            "request": PlanRequest(planMode="full"),
-            "trace_steps": [],
-        })
+        result = await graph.ainvoke(
+            {
+                "request": PlanRequest(planMode="full"),
+                "trace_steps": [],
+            }
+        )
         summary = result.get("plan_summary")
         assert summary is not None
         assert summary.planId.startswith("PLAN-")
@@ -111,10 +119,12 @@ class TestPlanGraph:
     @pytest.mark.asyncio
     async def test_quick_plan_skips_contradictions(self, seeded_store):
         graph = build_plan_graph()
-        result = await graph.ainvoke({
-            "request": PlanRequest(planMode="quick"),
-            "trace_steps": [],
-        })
+        result = await graph.ainvoke(
+            {
+                "request": PlanRequest(planMode="quick"),
+                "trace_steps": [],
+            }
+        )
         summary = result["plan_summary"]
         assert summary.conflictsDetected == 0
         # Quick mode should skip detect_conflicts and resolve_conflicts
@@ -124,20 +134,24 @@ class TestPlanGraph:
     @pytest.mark.asyncio
     async def test_empty_workspace_plan(self, fresh_store):
         graph = build_plan_graph()
-        result = await graph.ainvoke({
-            "request": PlanRequest(planMode="full"),
-            "trace_steps": [],
-        })
+        result = await graph.ainvoke(
+            {
+                "request": PlanRequest(planMode="full"),
+                "trace_steps": [],
+            }
+        )
         summary = result["plan_summary"]
         assert summary.totalIncidents == 0
 
     @pytest.mark.asyncio
     async def test_plan_graph_priority_ordering(self, seeded_store):
         graph = build_plan_graph()
-        result = await graph.ainvoke({
-            "request": PlanRequest(planMode="full"),
-            "trace_steps": [],
-        })
+        result = await graph.ainvoke(
+            {
+                "request": PlanRequest(planMode="full"),
+                "trace_steps": [],
+            }
+        )
         plans = result["plan_summary"].incidentPlans
         scores = [p.priorityScore for p in plans]
         assert scores == sorted(scores, reverse=True)
@@ -153,22 +167,26 @@ class TestSimulateGraph:
     async def test_simulate_through_graph(self, seeded_store):
         # First create a plan
         plan_graph = build_plan_graph()
-        plan_result = await plan_graph.ainvoke({
-            "request": PlanRequest(planMode="full"),
-            "trace_steps": [],
-        })
+        plan_result = await plan_graph.ainvoke(
+            {
+                "request": PlanRequest(planMode="full"),
+                "trace_steps": [],
+            }
+        )
         plan_id = plan_result["plan_summary"].planId
 
         # Then simulate
         sim_graph = build_simulate_graph()
-        result = await sim_graph.ainvoke({
-            "request": SimulateRequest(
-                planId=plan_id,
-                simulationSpeed="fast",
-                overrides=SimulateOverrides(forceApiFailure=True),
-            ),
-            "trace_steps": [],
-        })
+        result = await sim_graph.ainvoke(
+            {
+                "request": SimulateRequest(
+                    planId=plan_id,
+                    simulationSpeed="fast",
+                    overrides=SimulateOverrides(forceApiFailure=True),
+                ),
+                "trace_steps": [],
+            }
+        )
         assert result.get("error") is None
         run = result["simulation_run"]
         assert run.runId.startswith("SIM-")
@@ -178,10 +196,12 @@ class TestSimulateGraph:
     @pytest.mark.asyncio
     async def test_simulate_plan_not_found(self, fresh_store):
         sim_graph = build_simulate_graph()
-        result = await sim_graph.ainvoke({
-            "request": SimulateRequest(planId="PLAN-FAKE-0000"),
-            "trace_steps": [],
-        })
+        result = await sim_graph.ainvoke(
+            {
+                "request": SimulateRequest(planId="PLAN-FAKE-0000"),
+                "trace_steps": [],
+            }
+        )
         assert result.get("error") is not None
         assert "not found" in result["error"].lower()
         assert result.get("simulation_run") is None
@@ -189,19 +209,23 @@ class TestSimulateGraph:
     @pytest.mark.asyncio
     async def test_simulate_without_failure_injection(self, seeded_store):
         plan_graph = build_plan_graph()
-        plan_result = await plan_graph.ainvoke({
-            "request": PlanRequest(planMode="full"),
-            "trace_steps": [],
-        })
+        plan_result = await plan_graph.ainvoke(
+            {
+                "request": PlanRequest(planMode="full"),
+                "trace_steps": [],
+            }
+        )
 
         sim_graph = build_simulate_graph()
-        result = await sim_graph.ainvoke({
-            "request": SimulateRequest(
-                planId=plan_result["plan_summary"].planId,
-                simulationSpeed="instant",
-            ),
-            "trace_steps": [],
-        })
+        result = await sim_graph.ainvoke(
+            {
+                "request": SimulateRequest(
+                    planId=plan_result["plan_summary"].planId,
+                    simulationSpeed="instant",
+                ),
+                "trace_steps": [],
+            }
+        )
         run = result["simulation_run"]
         assert len(run.failuresSimulated) == 0
         assert len(run.animationFrames) == 1

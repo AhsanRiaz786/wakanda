@@ -38,7 +38,10 @@ async def ingest(body: IngestRequest):
         if not incident:
             raise HTTPException(
                 status_code=500,
-                detail={"code": "FLOW_EXECUTION_ERROR", "message": "No incident returned from graph"},
+                detail={
+                    "code": "FLOW_EXECUTION_ERROR",
+                    "message": "No incident returned from graph",
+                },
             )
 
         return incident.model_dump(mode="json")

@@ -5,13 +5,11 @@ Verifies the complete pipeline produces correct outputs and consistent data
 across all stages.
 """
 
-import pytest
-
 from app.flows.ingest_flow import run_ingest
 from app.flows.plan_flow import run_plan
 from app.flows.simulate_flow import run_simulate
 from app.flows.trace_flow import run_trace
-from app.models.enums import IncidentStatus, IncidentType, TraceStepType
+from app.models.enums import IncidentStatus, IncidentType
 from app.models.requests import (
     IngestRequest,
     PlanRequest,
