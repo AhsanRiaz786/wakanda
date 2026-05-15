@@ -1,20 +1,6 @@
-# CityIRA — Antigravity task plan
-
-> Fill in as you build in Google Antigravity IDE.
-
-## Goal
-
-City Incident-to-Response Routing Agent (Challenge 1) — mobile + LangGraph backend.
-
-## Tasks
-
-- [ ] Backend scaffold (`backend/`)
-- [ ] LangGraph flows: ingest, triage, simulate, trace
-- [ ] Mobile Expo app: map, incidents, plan, simulate, trace
-- [ ] Seed 5 demo incidents + contradiction demo
-- [ ] Demo videos (product + Antigravity IDE)
-
-## References
-
-- [plan.md](../../plan.md)
-- [planmvp.md](../../planmvp.md)
+- `[x]` Add `langchain-groq` to dependencies.
+- `[x]` Update `app/config.py` and `.env` to use `llama-3.1-8b-instant`.
+- `[x]` Create `app/llm/groq_provider.py`.
+- `[x]` Refactor `app/llm/factory.py` to default to Groq.
+- `[x]` Restart backend server.
+- `[x]` Run end-to-end smoke test to verify 6-incident processing via Groq.
