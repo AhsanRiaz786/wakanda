@@ -3,11 +3,32 @@
 Provides shared retry and error-handling logic across LLM providers.
 """
 
-from typing import Any, Callable, TypeVar
+import logging
+from typing import Callable, TypeVar
+
+logger = logging.getLogger(__name__)
 
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
+
+
+def _is_non_retryable(err: Exception) -> bool:
+    """Quota, auth, and model-not-found errors won't succeed on retry."""
+    msg = str(err).upper()
+    return any(
+        token in msg
+        for token in (
+            "RESOURCE_EXHAUSTED",
+            "429",
+            "NOT_FOUND",
+            "404",
+            "UNAUTHENTICATED",
+            "401",
+            "PERMISSION_DENIED",
+            "403",
+        )
+    )
 
 
 def invoke_with_retry(
@@ -20,11 +41,19 @@ def invoke_with_retry(
     If it fails after `retries`, returns the result of `fallback_fn()`.
     """
     last_err: Exception | None = None
-    for _ in range(retries + 1):
+    attempts = retries + 1
+    for attempt in range(attempts):
         try:
             return invoke_fn()
         except Exception as e:
             last_err = e
+            if _is_non_retryable(e):
+                break
 
-    # Optionally log last_err here
+    if last_err:
+        logger.warning(
+            "LLM invocation failed after %s attempt(s); using fallback: %s",
+            attempt + 1,
+            last_err,
+        )
     return fallback_fn()
