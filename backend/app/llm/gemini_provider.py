@@ -32,18 +32,21 @@ class GeminiLLMProvider:
             model=model,
             api_key=api_key,
             temperature=CLASSIFIER_TEMPERATURE,
+            max_retries=0,
         ).with_structured_output(ClassificationResult)
 
         self.resolver = ChatGoogleGenerativeAI(
             model=model,
             api_key=api_key,
             temperature=RESOLVER_TEMPERATURE,
+            max_retries=0,
         ).with_structured_output(ResolvedConflict)
 
         self.drafter = ChatGoogleGenerativeAI(
             model=model,
             api_key=api_key,
             temperature=NOTIFICATION_TEMPERATURE,
+            max_retries=0,
         ).with_structured_output(NotificationDrafts)
 
     # ------------------------------------------------------------------

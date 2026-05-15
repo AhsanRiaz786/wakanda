@@ -13,3 +13,4 @@ ruff>=0.7.0
 deepgram-sdk>=3.0.0
 groq>=0.9.0
 elevenlabs>=1.0.0
+python-multipart>=0.0.12
