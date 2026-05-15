@@ -246,19 +246,13 @@ async def summarise(response_dict: dict[str, Any]) -> str:
 
 
 async def synthesise(text: str) -> bytes:
-    """Convert summary text to MP3 audio via ElevenLabs free-tier voice."""
-    # Rachel voice — available on ElevenLabs free tier
-    VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
+    """Convert summary text to MP3 audio via Deepgram TTS (Aura)."""
+    url = "https://api.deepgram.com/v1/speak?model=aura-asteria-en"
     headers = {
-        "xi-api-key": settings.elevenlabs_api_key,
+        "Authorization": f"Token {settings.deepgram_api_key}",
         "Content-Type": "application/json",
     }
-    body = {
-        "text": text,
-        "model_id": "eleven_flash_v2_5",
-        "voice_settings": {"stability": 0.5, "similarity_boost": 0.75},
-    }
+    body = {"text": text}
     async with httpx.AsyncClient(timeout=20.0) as client:
         resp = await client.post(url, headers=headers, json=body)
         resp.raise_for_status()
@@ -277,6 +271,4 @@ def check_voice_keys() -> list[str]:
         missing.append("DEEPGRAM_API_KEY")
     if not settings.groq_api_key:
         missing.append("GROQ_API_KEY")
-    if not settings.elevenlabs_api_key:
-        missing.append("ELEVENLABS_API_KEY")
     return missing
