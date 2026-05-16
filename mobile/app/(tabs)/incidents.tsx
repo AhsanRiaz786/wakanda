@@ -291,6 +291,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
     backgroundColor: theme.colors.green,
     paddingVertical: 12,
     borderRadius: 12,
