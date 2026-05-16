@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Platform, Text } from 'react-native';
 import { theme } from '../../constants/theme';
 import { TopBar } from '../../components/TopBar';
@@ -18,6 +18,21 @@ export default function MapDashboardScreen() {
   const [loading, setLoading] = useState(false);
   const [planId, setPlanId] = useState<string | null>(null);
 
+  const [incidents, setIncidents] = useState<any[]>([]);
+
+  const fetchIncidents = useCallback(async () => {
+    try {
+      const data = await api.listIncidents();
+      setIncidents(data.incidents || []);
+    } catch (e) {
+      console.error('Failed to fetch incidents', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchIncidents();
+  }, [fetchIncidents, planId]);
+
   const runPlan = useCallback(async () => {
     setLoading(true);
     try {
@@ -29,6 +44,20 @@ export default function MapDashboardScreen() {
       setLoading(false);
     }
   }, []);
+
+  const filteredIncidents = incidents.filter(inc => {
+    if (activeFilter === 'All') return true;
+    const desc = (inc.description || '').toLowerCase();
+    if (activeFilter === 'Road Block') return desc.includes('road') || desc.includes('block') || desc.includes('traffic') || desc.includes('congestion') || desc.includes('tree');
+    if (activeFilter === 'Water') return desc.includes('water') || desc.includes('pipe') || desc.includes('flood') || desc.includes('leak');
+    if (activeFilter === 'Power') return desc.includes('power') || desc.includes('electrical') || desc.includes('arc') || desc.includes('train');
+    if (activeFilter === 'Accident') return desc.includes('accident') || desc.includes('crash') || desc.includes('rescue');
+    return true;
+  });
+
+  const openCount = incidents.filter(i => i.status === 'reported' || i.status === 'triaged' || !i.status).length;
+  const assignedCount = incidents.filter(i => i.status === 'assigned' || i.status === 'in_progress').length;
+  const resolvedCount = incidents.filter(i => i.status === 'resolved' || i.status === 'closed' || i.status === 'duplicate').length;
 
   // Map styling for a dark, high-contrast look
   const mapStyle = [
@@ -49,13 +78,13 @@ export default function MapDashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <Map mapStyle={mapStyle} />
+      <Map mapStyle={mapStyle} incidents={filteredIncidents} />
 
       <View style={styles.mapFade} />
 
       <TopBar 
-        title="NovaCivitas" 
-        subtitle="5 active incidents" 
+        title="Islamabad" 
+        subtitle={`${incidents.length} active incidents`} 
         leftIcon="pulse" 
         rightIcon="bell" 
         transparent 
@@ -82,31 +111,29 @@ export default function MapDashboardScreen() {
 
         {/* KPIs */}
         <View style={styles.kpiStrip}>
-          <KpiCard number="5" label="OPEN" color={theme.colors.crit} />
+          <KpiCard number={String(openCount)} label="OPEN" color={theme.colors.crit} />
           <View style={{ width: 8 }} />
-          <KpiCard number="2" label="ASSIGNED" color={theme.colors.high} />
+          <KpiCard number={String(assignedCount)} label="ASSIGNED" color={theme.colors.high} />
           <View style={{ width: 8 }} />
-          <KpiCard number="3" label="RESOLVED" color={theme.colors.green} />
+          <KpiCard number={String(resolvedCount)} label="RESOLVED" color={theme.colors.green} />
         </View>
 
         {/* Recent Incidents */}
-        <View style={styles.incRow}>
-          <View style={[styles.sevDot, { backgroundColor: theme.colors.crit, shadowColor: theme.colors.crit, shadowOpacity: 0.4, shadowRadius: 4 }]} />
-          <View style={styles.rowMain}>
-            <Typography variant="body" style={{ fontSize: 12, fontWeight: '500' }} numberOfLines={1}>Water main burst — Market Quarter</Typography>
-            <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 10, marginTop: 2 }}>Live Feed · 2 min ago · DEPT-UTIL</Typography>
-          </View>
-          <SeverityBadge severity="CRITICAL" />
-        </View>
-
-        <View style={styles.incRow}>
-          <View style={[styles.sevDot, { backgroundColor: theme.colors.high }]} />
-          <View style={styles.rowMain}>
-            <Typography variant="body" style={{ fontSize: 12, fontWeight: '500' }} numberOfLines={1}>Truck accident — Central Flyover</Typography>
-            <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 10, marginTop: 2 }}>Emergency Call · 9 min ago · DEPT-EMER</Typography>
-          </View>
-          <SeverityBadge severity="HIGH" />
-        </View>
+        <ScrollView style={{ flex: 1, minHeight: 150 }}>
+          {filteredIncidents.slice(0, 10).map((inc) => {
+            const sevColor = inc.severity === 'CRITICAL' ? theme.colors.crit : inc.severity === 'HIGH' ? theme.colors.high : inc.severity === 'LOW' ? theme.colors.low : theme.colors.med;
+            return (
+              <View key={inc.incidentId} style={styles.incRow}>
+                <View style={[styles.sevDot, { backgroundColor: sevColor, shadowColor: sevColor, shadowOpacity: 0.4, shadowRadius: 4 }]} />
+                <View style={styles.rowMain}>
+                  <Typography variant="body" style={{ fontSize: 12, fontWeight: '500' }} numberOfLines={1}>{inc.description}</Typography>
+                  <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 10, marginTop: 2 }}>{inc.sourceType} · {(inc.status || 'REPORTED').toUpperCase()} · {inc.assignedDepartments?.length ? inc.assignedDepartments.join(', ') : 'UNASSIGNED'}</Typography>
+                </View>
+                <SeverityBadge severity={inc.severity || 'UNKNOWN'} />
+              </View>
+            );
+          })}
+        </ScrollView>
 
         {/* Action Button */}
         <TouchableOpacity style={styles.runBtn} onPress={runPlan} disabled={loading}>
@@ -161,6 +188,7 @@ const styles = StyleSheet.create({
     bottom: Platform.OS === 'ios' ? 90 : 84,
     left: 0,
     right: 0,
+    maxHeight: height * 0.40,
     backgroundColor: 'rgba(9,15,20,0.98)',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,

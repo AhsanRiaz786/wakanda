@@ -20,11 +20,11 @@ class WorkspaceStore:
         self.sequences: dict[str, int] = {}
         self.last_plan_trace: list[dict] = []
         self.last_sim_trace: list[dict] = []
-        self.city_name: str = "NovaCivitas"
+        self.city_name: str = "Islamabad"
 
     def load_city_data(self, path: Path) -> None:
         data = json.loads(path.read_text(encoding="utf-8"))
-        self.city_name = data.get("cityName", "NovaCivitas")
+        self.city_name = data.get("cityName", "Islamabad")
         self.departments = data.get("departments", [])
         self.resources = deepcopy(data.get("resources", []))
         self.road_segments = deepcopy(data.get("roadSegments", []))

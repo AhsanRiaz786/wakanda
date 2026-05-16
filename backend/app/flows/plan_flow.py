@@ -204,7 +204,10 @@ def persist_plan(
 
     # Also update incidents
     for inc in incidents:
-        inc.status = IncidentStatus.TRIAGED
+        if inc.assignedResources:
+            inc.status = IncidentStatus.ASSIGNED
+        else:
+            inc.status = IncidentStatus.TRIAGED
         inc.updatedAt = now
         store.upsert_incident(inc)
 

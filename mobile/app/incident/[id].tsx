@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View, Pressable } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { MapPin, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react-native';
 
 import { api } from '@/src/lib/api';
@@ -48,6 +48,7 @@ export default function IncidentDetailScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
       <TopBar 
         title={id || 'Detail'} 
         leftIcon="back" 

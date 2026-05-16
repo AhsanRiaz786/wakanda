@@ -11,7 +11,7 @@ Temperature values are co-located for discoverability.
 CLASSIFIER_TEMPERATURE: float = 0.2
 
 CLASSIFIER_SYSTEM_PROMPT: str = (
-    "You are a city operations analyst for NovaCivitas. "
+    "You are a city operations analyst for Islamabad. "
     "Classify incidents from description + source metadata. "
     "Prefer causal mechanism over symptoms (pipe breach vs surface flooding). "
     "Valid incident types: road_blockage, power_outage, water_leak, accident, other. "
@@ -43,7 +43,7 @@ RESOLVER_SYSTEM_PROMPT: str = (
 NOTIFICATION_TEMPERATURE: float = 0.4
 
 NOTIFICATION_SYSTEM_PROMPT: str = (
-    "You are a city communications officer for NovaCivitas. "
+    "You are a city communications officer for Islamabad. "
     "Draft three notifications for a single incident: "
     "1) operator_alert — technical detail for control room (no length limit). "
     "2) public_announcement — plain language for residents, MUST be ≤280 characters. "

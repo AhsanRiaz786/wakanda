@@ -309,6 +309,12 @@ def persist_plan(state: PlanState) -> PlanState:
         inc.actionChain = ch
         inc.notificationDrafts = dr
         inc.resolvedConflict = conflict  # full legacy dict or None
+        
+        from app.models.enums import IncidentStatus
+        if inc.assignedResources:
+            inc.status = IncidentStatus.ASSIGNED
+        else:
+            inc.status = IncidentStatus.TRIAGED
 
         ip = IncidentPlan(
             incidentId=inc.incidentId,

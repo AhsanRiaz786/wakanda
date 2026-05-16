@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Brain, Tool, GitMerge, Database, AlertTriangle } from 'lucide-react-native';
+import { Brain, Wrench, GitMerge, Database, AlertTriangle } from 'lucide-react-native';
 import { Typography } from './Typography';
 import { theme } from '../constants/theme';
 
@@ -22,7 +22,7 @@ export function TraceNode({ type, title, detail, status, durationMs, isIndented,
   const getNodeConfig = () => {
     switch (type) {
       case 'llm': return { bg: 'rgba(139,92,246,0.12)', border: 'rgba(139,92,246,0.3)', color: '#A78BFA', icon: Brain };
-      case 'tool': return { bg: 'rgba(76,201,240,0.1)', border: 'rgba(76,201,240,0.25)', color: theme.colors.low, icon: Tool };
+      case 'tool': return { bg: 'rgba(76,201,240,0.1)', border: 'rgba(76,201,240,0.25)', color: theme.colors.low, icon: Wrench };
       case 'decision': return { bg: 'rgba(255,214,10,0.08)', border: 'rgba(255,214,10,0.25)', color: theme.colors.med, icon: GitMerge };
       case 'state': return { bg: 'rgba(0,214,143,0.08)', border: 'rgba(0,214,143,0.2)', color: theme.colors.green, icon: Database };
       case 'error': return { bg: 'rgba(255,71,87,0.08)', border: 'rgba(255,71,87,0.2)', color: theme.colors.crit, icon: AlertTriangle };
