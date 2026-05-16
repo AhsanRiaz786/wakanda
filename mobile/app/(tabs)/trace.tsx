@@ -41,7 +41,7 @@ export default function AgentTraceScreen() {
         rightIcon="bell" 
       />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         {/* Run Controls */}
         <View style={styles.controls}>
           <Pressable style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnPressed]} onPress={load} disabled={loading}>

@@ -29,8 +29,15 @@ To modernize the CityIRA mobile application frontend into a production-level, ha
 - **Action**: Synchronized secondary screens to seamlessly inherit the global Zinc theme.
 - **Details**:
   - Overhauled form inputs in the Report screen to feature custom borders, large touch targets, and contrast-ready typography.
-  - Upgraded the execution graph representations in the Agent Trace view to look like premium, real-time telemetry instead of a basic list.
+  - Upgraded the execution graph representations in the Agent Trace view to look like premium, real-time telemetry instead of a basic list. Added dynamic elbow connectors (`└─`) for nested state/tool calls to emulate an authentic LangGraph execution tree.
   - Upgraded Timeline Steppers and Action Chains in the Incident Detail view to appear as verified agent checkpoints.
+
+### 5. Final Polish & Layout Integrity
+- **Action**: Resolved edge cases, spacing inconsistencies, and navigation overlaps.
+- **Details**:
+  - **BottomNav Revamp**: Transitioned the active tab indicator from a generic glowing box to a modern, minimalist hovering neon dot based on provided design inspiration. Resolved the SVG `fill` issue causing Lucide stroke icons to render as solid blobs when active.
+  - **Button Spacing**: Enforced a uniform `12px` gap between Lucide icons and text across all primary action buttons ("Run Autonomous Plan", "View Details") for superior readability.
+  - **Padding/SafeArea Fixes**: Implemented a global `paddingBottom: 120` across all scrollable lists and forms (`report.tsx`, `incidents.tsx`, `trace.tsx`, `artifacts.tsx`) to prevent primary content or submission buttons from being hidden underneath the absolute-positioned floating bottom navbar.
 
 ---
 

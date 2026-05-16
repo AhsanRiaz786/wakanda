@@ -41,7 +41,7 @@ export default function ArtifactsScreen() {
     <View style={styles.container}>
       <TopBar title="Antigravity Artifacts" />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Typography variant="body" color={theme.colors.textMuted} style={styles.description}>
             This screen surfaces the verifiable Antigravity IDE artifacts (A1–A4) as required by the hackathon rubric. These documents prove the agent workflows were developed using the Antigravity IDE.

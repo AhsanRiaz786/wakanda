@@ -99,7 +99,7 @@ export default function IncidentsScreen() {
         keyExtractor={(item) => item.incidentId}
         refreshing={loading}
         onRefresh={load}
-        contentContainerStyle={{ paddingBottom: 100, paddingTop: 16, paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingBottom: 120, paddingTop: 16, paddingHorizontal: 16 }}
         renderItem={({ item }) => {
           const sevColor = getBorderColor(item.severity);
           
