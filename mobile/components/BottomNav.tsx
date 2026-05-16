@@ -35,12 +35,12 @@ export function BottomNav({ activeTab, onTabSelect }: BottomNavProps) {
               onPress={() => onTabSelect(tab.id)}
               activeOpacity={0.78}
             >
-              <View style={[styles.iconSlot, isActive && styles.iconSlotActive]}>
+              <View style={styles.iconSlot}>
+                {isActive && <View style={styles.activeDot} />}
                 <Icon
                   size={24}
                   color={color}
-                  fill={isActive ? color : 'transparent'}
-                  strokeWidth={isActive ? 2.4 : 2}
+                  strokeWidth={isActive ? 2.5 : 2}
                 />
               </View>
               <Typography
@@ -107,13 +107,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 3,
     borderRadius: 14,
+    position: 'relative',
   },
-  iconSlotActive: {
-    backgroundColor: theme.colors.greenDim,
+  activeDot: {
+    position: 'absolute',
+    top: -6,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: theme.colors.green,
     shadowColor: theme.colors.green,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.22,
-    shadowRadius: 10,
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 2,
   },
   label: {
     width: '100%',
