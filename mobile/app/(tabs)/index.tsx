@@ -260,11 +260,6 @@ export default function MapDashboardScreen() {
                         View Details
                       </Typography>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.btnSecondary}>
-                      <Typography variant="heading" style={{ fontSize: 13, color: theme.colors.text }}>
-                        Assign
-                      </Typography>
-                    </TouchableOpacity>
                   </View>
                 </View>
               );
