@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   },
   floatingCard: {
     position: 'absolute',
-    top: -70, // Sits exactly above the sheet
+    top: -80, // Sits exactly above the sheet
     left: 20,
     right: 20,
     backgroundColor: theme.colors.surface,

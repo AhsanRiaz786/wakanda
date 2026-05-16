@@ -44,7 +44,7 @@ export function TraceNode({ type, title, detail, status, durationMs, isIndented,
   return (
     <View style={styles.container}>
       <View style={[styles.nodeRow, isIndented && styles.indented]}>
-        {isIndented && <View style={styles.indentLine} />}
+        {isIndented && <View style={styles.elbow} />}
         
         <View style={[styles.iconBox, { backgroundColor: config.bg, borderColor: config.border }]}>
           <Icon size={12} color={config.color} strokeWidth={2.5} />
@@ -91,15 +91,18 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   indented: {
-    marginLeft: 24,
+    marginLeft: 32,
   },
-  indentLine: {
+  elbow: {
     position: 'absolute',
-    left: -14,
-    top: 0,
-    bottom: -16, // extends down to next item ideally
-    width: 1,
-    backgroundColor: theme.colors.border,
+    left: -20,
+    top: -18,
+    width: 16,
+    height: 32,
+    borderLeftWidth: 1.5,
+    borderBottomWidth: 1.5,
+    borderColor: theme.colors.border2,
+    borderBottomLeftRadius: 8,
   },
   iconBox: {
     width: 26,
