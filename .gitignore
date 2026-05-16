@@ -57,3 +57,5 @@ docs/evidence/*.json
 docs/antigravity/screenshots/*
 !docs/antigravity/screenshots/.gitkeep
 
+
+mobile/assets/inspo

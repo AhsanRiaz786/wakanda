@@ -37,7 +37,7 @@ export function StatusBadge({ status }: { status: 'Reported' | 'Triaged' | 'Assi
     bg = 'rgba(255,140,66,0.1)';
     color = theme.colors.high;
   } else if (isDone) {
-    bg = 'rgba(0,214,143,0.1)';
+    bg = theme.colors.greenDim;
     color = theme.colors.green;
   }
 
@@ -86,6 +86,6 @@ const styles = StyleSheet.create({
   },
   srcPillActive: {
     backgroundColor: theme.colors.greenDim,
-    borderColor: 'rgba(0,214,143,0.4)',
+    borderColor: theme.colors.greenGlow,
   },
 });

@@ -24,14 +24,14 @@ export function TraceNode({ type, title, detail, status, durationMs, isIndented,
       case 'llm': return { bg: 'rgba(139,92,246,0.12)', border: 'rgba(139,92,246,0.3)', color: '#A78BFA', icon: Brain };
       case 'tool': return { bg: 'rgba(76,201,240,0.1)', border: 'rgba(76,201,240,0.25)', color: theme.colors.low, icon: Wrench };
       case 'decision': return { bg: 'rgba(255,214,10,0.08)', border: 'rgba(255,214,10,0.25)', color: theme.colors.med, icon: GitMerge };
-      case 'state': return { bg: 'rgba(0,214,143,0.08)', border: 'rgba(0,214,143,0.2)', color: theme.colors.green, icon: Database };
+      case 'state': return { bg: theme.colors.greenDim, border: theme.colors.greenGlow, color: theme.colors.green, icon: Database };
       case 'error': return { bg: 'rgba(255,71,87,0.08)', border: 'rgba(255,71,87,0.2)', color: theme.colors.crit, icon: AlertTriangle };
     }
   };
 
   const getStatusConfig = () => {
     switch (status) {
-      case 'ok': return { bg: 'rgba(0,214,143,0.1)', color: theme.colors.green, text: 'SUCCESS' };
+      case 'ok': return { bg: theme.colors.greenDim, color: theme.colors.green, text: 'SUCCESS' };
       case 'warn': return { bg: 'rgba(255,214,10,0.1)', color: theme.colors.med, text: 'WARNING' };
       case 'error': return { bg: 'rgba(255,71,87,0.1)', color: theme.colors.crit, text: 'FAILURE' };
     }

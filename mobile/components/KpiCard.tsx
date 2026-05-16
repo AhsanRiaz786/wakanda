@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   deltaPos: {
-    backgroundColor: 'rgba(0,214,143,0.1)',
+    backgroundColor: theme.colors.greenDim,
   },
   deltaNeg: {
     backgroundColor: 'rgba(255,71,87,0.1)',

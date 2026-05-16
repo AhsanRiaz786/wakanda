@@ -24,7 +24,7 @@ export function TimelineStepper({ steps, currentStepIndex }: StepperProps) {
 
         if (isDone) {
           circleBg = theme.colors.green;
-          circleColor = '#041A10';
+          circleColor = theme.colors.greenSoft;
           circleBorder = theme.colors.green;
           lineBg = theme.colors.green;
         } else if (isActive) {

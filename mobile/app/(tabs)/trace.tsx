@@ -44,13 +44,13 @@ export default function AgentTraceScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Run Controls */}
         <View style={styles.controls}>
-          <Pressable style={styles.btnSecondary} onPress={load} disabled={loading}>
-            <RefreshCw size={14} color={theme.colors.textMuted} />
-            <Typography variant="body" color={theme.colors.text} style={{ fontSize: 12 }}>{loading ? 'Refreshing...' : 'Refresh Trace'}</Typography>
+          <Pressable style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnPressed]} onPress={load} disabled={loading}>
+            <RefreshCw size={16} color={theme.colors.textMuted} />
+            <Typography variant="body" color={theme.colors.text} style={{ fontSize: 13, fontWeight: '500' }}>{loading ? 'Refreshing...' : 'Refresh Trace'}</Typography>
           </Pressable>
-          <Pressable style={styles.btnPrimary}>
-            <Play size={14} color="#041A10" fill="#041A10" />
-            <Typography variant="body" color="#041A10" style={{ fontSize: 12, fontWeight: '600' }}>Run Simulation</Typography>
+          <Pressable style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPressed]}>
+            <Play size={16} color="#000" fill="#000" />
+            <Typography variant="body" color="#000" style={{ fontSize: 13, fontWeight: '700' }}>Run Simulation</Typography>
           </Pressable>
         </View>
 
@@ -66,9 +66,10 @@ export default function AgentTraceScreen() {
 
         {/* Tree Header */}
         <View style={styles.treeHeader}>
-          <Typography variant="label" color={theme.colors.textDim}>Execution Graph</Typography>
+          <Typography variant="label" color={theme.colors.textDim} style={{ letterSpacing: 1.5, fontSize: 11 }}>EXECUTION GRAPH</Typography>
           <View style={styles.statusBadge}>
-            <Typography variant="mono" color={theme.colors.green} style={{ fontSize: 9, fontWeight: '700' }}>ONLINE</Typography>
+            <View style={styles.pulseDot} />
+            <Typography variant="mono" color={theme.colors.green} style={{ fontSize: 10, fontWeight: '700' }}>ONLINE</Typography>
           </View>
         </View>
 
@@ -77,40 +78,44 @@ export default function AgentTraceScreen() {
           {loading && !trace ? (
             <ActivityIndicator color={theme.colors.green} style={{ marginVertical: 40 }} />
           ) : steps.length === 0 ? (
-            <Typography variant="body" color={theme.colors.textMuted} style={{ textAlign: 'center', marginVertical: 40 }}>
-              No trace available. Run a simulation first.
-            </Typography>
+            <View style={styles.emptyState}>
+              <Typography variant="body" color={theme.colors.textMuted} style={{ textAlign: 'center' }}>
+                No trace available. Run a simulation first.
+              </Typography>
+            </View>
           ) : (
-            steps.map((step, index) => {
-              const typeMap: Record<string, TraceNodeType> = {
-                'llm_call': 'llm',
-                'tool_call': 'tool',
-                'decision': 'decision',
-                'state_update': 'state',
-                'error': 'error'
-              };
-              const statusMap: Record<string, TraceStatus> = {
-                'success': 'ok',
-                'warning': 'warn',
-                'failed': 'error'
-              };
-              
-              const nodeType = typeMap[String(step.type)] || 'tool';
-              const nodeStatus = statusMap[String(step.status)] || 'ok';
-              
-              return (
-                <TraceNode
-                  key={String(step.stepId) || index.toString()}
-                  type={nodeType}
-                  title={String(step.name)}
-                  detail={String(step.type)}
-                  status={nodeStatus}
-                  durationMs={Number(step.durationMs || 0)}
-                  isIndented={nodeType === 'tool' || nodeType === 'error'}
-                  rationale={step.decisionRationale ? String(step.decisionRationale) : undefined}
-                />
-              );
-            })
+            <View style={styles.traceTree}>
+              {steps.map((step, index) => {
+                const typeMap: Record<string, TraceNodeType> = {
+                  'llm_call': 'llm',
+                  'tool_call': 'tool',
+                  'decision': 'decision',
+                  'state_update': 'state',
+                  'error': 'error'
+                };
+                const statusMap: Record<string, TraceStatus> = {
+                  'success': 'ok',
+                  'warning': 'warn',
+                  'failed': 'error'
+                };
+                
+                const nodeType = typeMap[String(step.type)] || 'tool';
+                const nodeStatus = statusMap[String(step.status)] || 'ok';
+                
+                return (
+                  <TraceNode
+                    key={String(step.stepId) || index.toString()}
+                    type={nodeType}
+                    title={String(step.name)}
+                    detail={String(step.type)}
+                    status={nodeStatus}
+                    durationMs={Number(step.durationMs || 0)}
+                    isIndented={nodeType === 'tool' || nodeType === 'error'}
+                    rationale={step.decisionRationale ? String(step.decisionRationale) : undefined}
+                  />
+                );
+              })}
+            </View>
           )}
         </View>
 
@@ -122,62 +127,103 @@ export default function AgentTraceScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: theme.colors.surface 
+    backgroundColor: theme.colors.bg 
   },
   controls: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    gap: 12,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   btnSecondary: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
     backgroundColor: theme.colors.surface2,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 10,
-    paddingVertical: 12,
+    borderColor: theme.colors.border2,
+    borderRadius: 12,
+    paddingVertical: 14,
   },
   btnPrimary: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
     backgroundColor: theme.colors.green,
-    borderRadius: 10,
-    paddingVertical: 12,
+    borderRadius: 12,
+    paddingVertical: 14,
+    shadowColor: theme.colors.green,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  btnPressed: {
+    opacity: 0.8,
   },
   kpiRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 8,
+    paddingVertical: 20,
+    gap: 12,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   treeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
   statusBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    backgroundColor: 'rgba(0,214,143,0.1)',
-    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: theme.colors.greenDim,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.greenGlow,
+  },
+  pulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.green,
   },
   traceContainer: {
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
+  traceTree: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  emptyState: {
+    padding: 32,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+  }
 });
