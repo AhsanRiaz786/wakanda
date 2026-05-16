@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { Navigation, Map as MapIcon, PlusCircle, Activity } from 'lucide-react-native';
-import { Typography } from './Typography';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ClipboardList, FilePlus2, Home, ShieldCheck } from 'lucide-react-native';
+
 import { theme } from '../constants/theme';
-// Assuming expo-router or similar will handle active state, we take it as prop for now.
+import { Typography } from './Typography';
 
 type Tab = 'Map' | 'Incidents' | 'Report' | 'Trace';
 
@@ -13,70 +13,123 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ activeTab, onTabSelect }: BottomNavProps) {
-  const tabs: { id: Tab; icon: any }[] = [
-    { id: 'Map', icon: Navigation },
-    { id: 'Incidents', icon: Activity }, // Or custom List icon
-    { id: 'Report', icon: PlusCircle },
-    { id: 'Trace', icon: MapIcon }, // Or custom Network icon
+  const tabs: { id: Tab; label: string; icon: any }[] = [
+    { id: 'Map', label: 'Home', icon: Home },
+    { id: 'Incidents', label: 'Incidents', icon: ClipboardList },
+    { id: 'Report', label: 'Report', icon: FilePlus2 },
+    { id: 'Trace', label: 'Proof', icon: ShieldCheck },
   ];
 
   return (
-    <View style={styles.container}>
-      {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
-        const color = isActive ? theme.colors.green : theme.colors.textDim;
-        const Icon = tab.icon;
+    <View style={styles.safeArea} pointerEvents="box-none">
+      <View style={styles.container}>
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          const color = isActive ? theme.colors.green : theme.colors.textMuted;
+          const Icon = tab.icon;
 
-        return (
-          <TouchableOpacity 
-            key={tab.id} 
-            style={styles.tab} 
-            onPress={() => onTabSelect(tab.id)}
-            activeOpacity={0.7}
-          >
-            {isActive && <View style={styles.activeDot} />}
-            <Icon size={22} color={color} strokeWidth={isActive ? 2.5 : 1.8} />
-            <Typography 
-              variant="body" 
-              color={color} 
-              style={{ fontSize: 10, fontWeight: '500', marginTop: 4 }}
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              style={styles.tab}
+              onPress={() => onTabSelect(tab.id)}
+              activeOpacity={0.78}
             >
-              {tab.id}
-            </Typography>
-          </TouchableOpacity>
-        );
-      })}
+              <View style={styles.iconSlot}>
+                {isActive && <View style={styles.activeDot} />}
+                <Icon
+                  size={24}
+                  color={color}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+              </View>
+              <Typography
+                variant="body"
+                color={color}
+                style={[styles.label, isActive && styles.labelActive]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.82}
+              >
+                {tab.label}
+              </Typography>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
-    height: Platform.OS === 'ios' ? 90 : 84,
-    backgroundColor: 'rgba(8,14,18,0.97)',
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingTop: 12,
+    bottom: 0,
+    height: Platform.OS === 'ios' ? 102 : 94,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 8,
     zIndex: 180,
+  },
+  container: {
+    width: '91%',
+    maxWidth: 430,
+    minHeight: 68,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(8,14,18,0.98)',
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: theme.colors.border2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.38,
+    shadowRadius: 22,
+    elevation: 16,
   },
   tab: {
     flex: 1,
+    minWidth: 0,
+    height: 54,
     alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  iconSlot: {
+    width: 32,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 3,
+    borderRadius: 14,
     position: 'relative',
   },
   activeDot: {
     position: 'absolute',
-    top: -12,
-    width: 20,
-    height: 2,
+    top: -6,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: theme.colors.green,
-    borderBottomLeftRadius: 2,
-    borderBottomRightRadius: 2,
+    shadowColor: theme.colors.green,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  label: {
+    width: '100%',
+    textAlign: 'center',
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '600',
+  },
+  labelActive: {
+    fontWeight: '800',
   },
 });

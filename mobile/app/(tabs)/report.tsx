@@ -45,17 +45,17 @@ export default function ReportIncidentScreen() {
         ) : null}
         
         {error ? (
-          <View style={[styles.msgBox, { backgroundColor: 'rgba(255,71,87,0.1)', borderColor: 'rgba(255,71,87,0.3)' }]}>
+          <View style={[styles.msgBox, { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }]}>
             <Typography variant="body" color={theme.colors.crit}>{error}</Typography>
           </View>
         ) : null}
 
         <View style={styles.locBox}>
-          <MapPin size={16} color={theme.colors.textDim} />
-          <Typography variant="body" style={{ flex: 1 }}>Location auto-detected: Sector G-11</Typography>
+          <MapPin size={18} color={theme.colors.textDim} />
+          <Typography variant="body" style={{ flex: 1, fontSize: 13 }}>Location auto-detected: Sector G-11</Typography>
         </View>
 
-        <Typography variant="label" color={theme.colors.textDim} style={{ marginBottom: 10, marginTop: 10 }}>Observation</Typography>
+        <Typography variant="label" color={theme.colors.textDim} style={{ marginBottom: 12, marginTop: 16, letterSpacing: 1 }}>OBSERVATION</Typography>
         <TextInput
           style={styles.input}
           multiline
@@ -66,27 +66,31 @@ export default function ReportIncidentScreen() {
         />
 
         <View style={styles.attachRow}>
-          <Pressable style={styles.attachBtn}>
+          <Pressable style={({ pressed }) => [styles.attachBtn, pressed && styles.pressedState]}>
             <Camera size={18} color={theme.colors.text} />
-            <Typography variant="body" style={{ fontSize: 12 }}>Take Photo</Typography>
+            <Typography variant="body" style={{ fontSize: 13, fontWeight: '500' }}>Take Photo</Typography>
           </Pressable>
-          <Pressable style={styles.attachBtn}>
+          <Pressable style={({ pressed }) => [styles.attachBtn, pressed && styles.pressedState]}>
             <Upload size={18} color={theme.colors.text} />
-            <Typography variant="body" style={{ fontSize: 12 }}>Upload Media</Typography>
+            <Typography variant="body" style={{ fontSize: 13, fontWeight: '500' }}>Upload Media</Typography>
           </Pressable>
         </View>
 
         <View style={{ flex: 1 }} />
 
         <Pressable 
-          style={[styles.submitBtn, (!description.trim() || loading) && styles.submitBtnDisabled]} 
+          style={({ pressed }) => [
+            styles.submitBtn, 
+            (!description.trim() || loading) && styles.submitBtnDisabled,
+            pressed && !(!description.trim() || loading) && styles.pressedState
+          ]} 
           onPress={submit}
           disabled={!description.trim() || loading}
         >
           {loading ? (
-            <ActivityIndicator color="#041A10" />
+            <ActivityIndicator color={theme.colors.surface} />
           ) : (
-            <Typography variant="heading" color="#041A10" style={{ fontSize: 14 }}>Submit Report</Typography>
+            <Typography variant="heading" color={theme.colors.bg} style={{ fontSize: 15, letterSpacing: 0.5 }}>Submit Report</Typography>
           )}
         </Pressable>
       </View>
@@ -97,70 +101,84 @@ export default function ReportIncidentScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.bg,
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: 20,
+    paddingBottom: 120,
   },
   msgBox: {
-    padding: 12,
-    backgroundColor: 'rgba(0,214,143,0.1)',
+    padding: 14,
+    backgroundColor: theme.colors.greenDim,
     borderWidth: 1,
-    borderColor: 'rgba(0,214,143,0.3)',
-    borderRadius: 8,
-    marginBottom: 16,
+    borderColor: theme.colors.greenGlow,
+    borderRadius: 12,
+    marginBottom: 20,
   },
   locBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    backgroundColor: theme.colors.surface2,
-    padding: 12,
-    borderRadius: 10,
+    gap: 12,
+    backgroundColor: theme.colors.surface,
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.border2,
     marginBottom: 16,
   },
   input: {
-    minHeight: 160,
-    backgroundColor: theme.colors.surface2,
+    minHeight: 180,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border2,
-    borderRadius: 12,
-    padding: 16,
-    paddingTop: 16,
+    borderRadius: 16,
+    padding: 20,
+    paddingTop: 20,
     color: theme.colors.text,
-    fontSize: 14,
-    fontFamily: Platform.OS === 'ios' ? 'Inter-Regular' : undefined,
+    fontSize: 15,
     textAlignVertical: 'top',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   attachRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 16,
+    gap: 12,
+    marginTop: 20,
   },
   attachBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
+    gap: 10,
+    paddingVertical: 14,
     backgroundColor: theme.colors.surface2,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.border2,
   },
   submitBtn: {
     backgroundColor: theme.colors.green,
-    paddingVertical: 16,
-    borderRadius: 14,
+    paddingVertical: 18,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
+    shadowColor: theme.colors.green,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
   },
   submitBtnDisabled: {
     opacity: 0.5,
+    shadowOpacity: 0,
+    elevation: 0,
   },
+  pressedState: {
+    opacity: 0.8,
+  }
 });

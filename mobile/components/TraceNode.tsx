@@ -24,14 +24,14 @@ export function TraceNode({ type, title, detail, status, durationMs, isIndented,
       case 'llm': return { bg: 'rgba(139,92,246,0.12)', border: 'rgba(139,92,246,0.3)', color: '#A78BFA', icon: Brain };
       case 'tool': return { bg: 'rgba(76,201,240,0.1)', border: 'rgba(76,201,240,0.25)', color: theme.colors.low, icon: Wrench };
       case 'decision': return { bg: 'rgba(255,214,10,0.08)', border: 'rgba(255,214,10,0.25)', color: theme.colors.med, icon: GitMerge };
-      case 'state': return { bg: 'rgba(0,214,143,0.08)', border: 'rgba(0,214,143,0.2)', color: theme.colors.green, icon: Database };
+      case 'state': return { bg: theme.colors.greenDim, border: theme.colors.greenGlow, color: theme.colors.green, icon: Database };
       case 'error': return { bg: 'rgba(255,71,87,0.08)', border: 'rgba(255,71,87,0.2)', color: theme.colors.crit, icon: AlertTriangle };
     }
   };
 
   const getStatusConfig = () => {
     switch (status) {
-      case 'ok': return { bg: 'rgba(0,214,143,0.1)', color: theme.colors.green, text: 'SUCCESS' };
+      case 'ok': return { bg: theme.colors.greenDim, color: theme.colors.green, text: 'SUCCESS' };
       case 'warn': return { bg: 'rgba(255,214,10,0.1)', color: theme.colors.med, text: 'WARNING' };
       case 'error': return { bg: 'rgba(255,71,87,0.1)', color: theme.colors.crit, text: 'FAILURE' };
     }
@@ -44,7 +44,7 @@ export function TraceNode({ type, title, detail, status, durationMs, isIndented,
   return (
     <View style={styles.container}>
       <View style={[styles.nodeRow, isIndented && styles.indented]}>
-        {isIndented && <View style={styles.indentLine} />}
+        {isIndented && <View style={styles.elbow} />}
         
         <View style={[styles.iconBox, { backgroundColor: config.bg, borderColor: config.border }]}>
           <Icon size={12} color={config.color} strokeWidth={2.5} />
@@ -91,15 +91,18 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   indented: {
-    marginLeft: 24,
+    marginLeft: 32,
   },
-  indentLine: {
+  elbow: {
     position: 'absolute',
-    left: -14,
-    top: 0,
-    bottom: -16, // extends down to next item ideally
-    width: 1,
-    backgroundColor: theme.colors.border,
+    left: -20,
+    top: -18,
+    width: 16,
+    height: 32,
+    borderLeftWidth: 1.5,
+    borderBottomWidth: 1.5,
+    borderColor: theme.colors.border2,
+    borderBottomLeftRadius: 8,
   },
   iconBox: {
     width: 26,
