@@ -3,8 +3,9 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme, StatusBar } from 'react-native';
+import { StatusBar } from 'react-native';
 import 'react-native-reanimated';
+import { ThemeProvider, useThemeContext } from '../contexts/ThemeContext';
 import { darkColors, lightColors } from '../constants/theme';
 
 export {
@@ -37,12 +38,15 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <ThemeProvider>
+      <RootLayoutNav />
+    </ThemeProvider>
+  );
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark } = useThemeContext();
   const colors = isDark ? darkColors : lightColors;
 
   return (

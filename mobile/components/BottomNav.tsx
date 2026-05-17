@@ -1,11 +1,11 @@
 import React from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ClipboardList, FilePlus2, Home, ShieldCheck } from 'lucide-react-native';
+import { ClipboardList, FilePlus2, Home, ShieldCheck, Settings2 } from 'lucide-react-native';
 
 import { useAppTheme } from '../hooks/useAppTheme';
 import { Typography } from './Typography';
 
-type Tab = 'Map' | 'Incidents' | 'Report' | 'Trace';
+type Tab = 'Map' | 'Incidents' | 'Report' | 'Trace' | 'Settings';
 
 interface BottomNavProps {
   activeTab: Tab;
@@ -20,7 +20,8 @@ export function BottomNav({ activeTab, onTabSelect }: BottomNavProps) {
     { id: 'Map', label: 'Home', icon: Home },
     { id: 'Incidents', label: 'Incidents', icon: ClipboardList },
     { id: 'Report', label: 'Report', icon: FilePlus2 },
-    { id: 'Trace', label: 'Proof', icon: ShieldCheck },
+    { id: 'Trace', label: 'Trace', icon: ShieldCheck },
+    { id: 'Settings', label: 'Settings', icon: Settings2 },
   ];
 
   return (
