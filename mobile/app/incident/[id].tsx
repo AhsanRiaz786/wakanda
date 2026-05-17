@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { MapPin, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react-native';
 
 import { api } from '@/src/lib/api';
-import { theme } from '../../constants/theme';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { TopBar } from '../../components/TopBar';
 import { Typography } from '../../components/Typography';
 import { TimelineStepper } from '../../components/TimelineStepper';
@@ -14,21 +14,24 @@ const STATUS_STEPS = ['Reported', 'Triaged', 'Assigned', 'In Progress', 'Resolve
 export default function IncidentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = makeStyles(colors, isDark);
+  
   const [incident, setIncident] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     api
-      .getIncident(id)
+      .getIncident(id as string)
       .then(setIncident)
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed'));
   }, [id]);
 
   if (!incident && !error) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.colors.bg, justifyContent: 'center' }}>
-        <ActivityIndicator color={theme.colors.green} size="large" />
+      <View style={{ flex: 1, backgroundColor: colors.bg, justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.green} size="large" />
       </View>
     );
   }
@@ -39,10 +42,10 @@ export default function IncidentDetailScreen() {
   const stepIndex = STATUS_STEPS.indexOf(status);
 
   const getBorderColor = (sev: string) => {
-    if (sev === 'CRITICAL') return theme.colors.crit;
-    if (sev === 'HIGH') return theme.colors.high;
-    if (sev === 'MEDIUM') return theme.colors.med;
-    return theme.colors.low;
+    if (sev === 'CRITICAL') return colors.crit;
+    if (sev === 'HIGH') return colors.high;
+    if (sev === 'MEDIUM') return colors.med;
+    return colors.low;
   };
   const sevColor = getBorderColor(severity);
 
@@ -50,13 +53,13 @@ export default function IncidentDetailScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <TopBar 
-        title={id || 'Detail'} 
+        title={(id as string) || 'Detail'} 
         leftIcon="back" 
         onLeftPress={() => router.back()} 
       />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        {error && <Typography variant="body" color={theme.colors.crit} style={{ padding: 16 }}>{error}</Typography>}
+        {error && <Typography variant="body" color={colors.crit} style={{ padding: 16 }}>{error}</Typography>}
         
         {/* Hero */}
         <View style={styles.hero}>
@@ -70,12 +73,12 @@ export default function IncidentDetailScreen() {
           
           <View style={styles.metaRow}>
             <View style={styles.metaTag}>
-              <MapPin size={14} color={theme.colors.textDim} strokeWidth={2} />
-              <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 12 }}>Market Quarter (D-02)</Typography>
+              <MapPin size={14} color={colors.textDim} strokeWidth={2} />
+              <Typography variant="body" color={colors.textMuted} style={{ fontSize: 12 }}>Market Quarter (D-02)</Typography>
             </View>
             <View style={styles.metaTag}>
-              <Clock size={14} color={theme.colors.textDim} strokeWidth={2} />
-              <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 12 }}>2 min ago</Typography>
+              <Clock size={14} color={colors.textDim} strokeWidth={2} />
+              <Typography variant="body" color={colors.textMuted} style={{ fontSize: 12 }}>2 min ago</Typography>
             </View>
           </View>
         </View>
@@ -87,7 +90,7 @@ export default function IncidentDetailScreen() {
 
         {/* Classification */}
         <View style={styles.sectionContainer}>
-          <Typography variant="label" color={theme.colors.textDim} style={styles.dsecLabel}>Classification</Typography>
+          <Typography variant="label" color={colors.textDim} style={styles.dsecLabel}>Classification</Typography>
           <View style={styles.infoGrid}>
             <View style={styles.infoCell}>
               <Typography variant="mono" style={styles.infoCellK}>Category</Typography>
@@ -103,21 +106,21 @@ export default function IncidentDetailScreen() {
             </View>
             <View style={styles.infoCell}>
               <Typography variant="mono" style={styles.infoCellK}>Confidence</Typography>
-              <Typography variant="body" style={[styles.infoCellV, { color: theme.colors.green }]}>92%</Typography>
+              <Typography variant="body" style={[styles.infoCellV, { color: colors.green }]}>92%</Typography>
             </View>
           </View>
         </View>
 
         {/* Description */}
         <View style={styles.sectionContainer}>
-          <Typography variant="label" color={theme.colors.textDim} style={styles.dsecLabel}>Description</Typography>
-          <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 14, lineHeight: 22 }}>
+          <Typography variant="label" color={colors.textDim} style={styles.dsecLabel}>Description</Typography>
+          <Typography variant="body" color={colors.textMuted} style={{ fontSize: 14, lineHeight: 22 }}>
             {String(incident?.description || 'No description provided.')}
           </Typography>
           {incident?.classificationRationale && (
             <View style={styles.rationaleBox}>
-              <Typography variant="body" color={theme.colors.low} style={{ fontSize: 12, lineHeight: 18 }}>
-                <Typography variant="label" color={theme.colors.low} style={{ fontWeight: '700' }}>AI RATIONALE: </Typography>
+              <Typography variant="body" color={colors.low} style={{ fontSize: 12, lineHeight: 18 }}>
+                <Typography variant="label" color={colors.low} style={{ fontWeight: '700' }}>AI RATIONALE: </Typography>
                 {String(incident.classificationRationale)}
               </Typography>
             </View>
@@ -127,24 +130,24 @@ export default function IncidentDetailScreen() {
         {/* Contradiction */}
         {conflict && (
           <View style={styles.sectionContainer}>
-            <Typography variant="label" color={theme.colors.textDim} style={styles.dsecLabel}>Contradiction Alert</Typography>
+            <Typography variant="label" color={colors.textDim} style={styles.dsecLabel}>Contradiction Alert</Typography>
             <View style={styles.contraCard}>
               <View style={styles.contraHeader}>
-                <AlertTriangle size={16} color={theme.colors.crit} strokeWidth={2.5} />
-                <Typography variant="body" color={theme.colors.crit} style={{ fontSize: 13, fontWeight: '700' }}>Conflicting reports detected</Typography>
+                <AlertTriangle size={16} color={colors.crit} strokeWidth={2.5} />
+                <Typography variant="body" color={colors.crit} style={{ fontSize: 13, fontWeight: '700' }}>Conflicting reports detected</Typography>
               </View>
               <View style={styles.srcRow}>
                 <View style={[styles.srcBox, styles.srcA]}>
                   <Typography variant="body" style={{ fontSize: 12, fontWeight: '700' }}>Source A</Typography>
-                  <Typography variant="body" color={theme.colors.crit} style={{ fontSize: 10, marginTop: 4 }}>Reported conflicting info</Typography>
+                  <Typography variant="body" color={colors.crit} style={{ fontSize: 10, marginTop: 4 }}>Reported conflicting info</Typography>
                 </View>
                 <View style={[styles.srcBox, styles.srcB]}>
                   <Typography variant="body" style={{ fontSize: 12, fontWeight: '700' }}>Source B</Typography>
-                  <Typography variant="body" color={theme.colors.green} style={{ fontSize: 10, marginTop: 4 }}>Reported conflicting info</Typography>
+                  <Typography variant="body" color={colors.green} style={{ fontSize: 10, marginTop: 4 }}>Reported conflicting info</Typography>
                 </View>
               </View>
               <View style={styles.resBadge}>
-                <Typography variant="body" color={theme.colors.green} style={{ fontSize: 11, fontWeight: '500' }}>✓ AI resolved: {String(conflict.rationale)}</Typography>
+                <Typography variant="body" color={colors.green} style={{ fontSize: 11, fontWeight: '500' }}>✓ AI resolved: {String(conflict.rationale)}</Typography>
               </View>
             </View>
           </View>
@@ -152,24 +155,24 @@ export default function IncidentDetailScreen() {
 
         {/* Action Chain */}
         <View style={[styles.sectionContainer, { borderBottomWidth: 0 }]}>
-          <Typography variant="label" color={theme.colors.textDim} style={styles.dsecLabel}>Agent Actions</Typography>
+          <Typography variant="label" color={colors.textDim} style={styles.dsecLabel}>Agent Actions</Typography>
           <View style={styles.actionChain}>
             <View style={styles.acStep}>
-              <View style={[styles.acNum, styles.acDone]}><CheckCircle2 size={14} color={theme.colors.green} /></View>
+              <View style={[styles.acNum, styles.acDone]}><CheckCircle2 size={14} color={colors.green} /></View>
               <View style={styles.acBody}>
                 <Typography variant="body" style={styles.acName}>Classify & Triage</Typography>
                 <Typography variant="body" style={styles.acDesc}>Severity confirmed · {severity}</Typography>
               </View>
             </View>
             <View style={styles.acStep}>
-              <View style={[styles.acNum, styles.acAct]}><Typography variant="mono" color={theme.colors.high} style={{ fontSize: 10, fontWeight: '700' }}>2</Typography></View>
+              <View style={[styles.acNum, styles.acAct]}><Typography variant="mono" color={colors.high} style={{ fontSize: 10, fontWeight: '700' }}>2</Typography></View>
               <View style={styles.acBody}>
                 <Typography variant="body" style={styles.acName}>Notify Departments</Typography>
                 <Typography variant="body" style={styles.acDesc}>Generating dispatch plans</Typography>
               </View>
             </View>
             <View style={styles.acStep}>
-              <View style={styles.acNum}><Typography variant="mono" color={theme.colors.textMuted} style={{ fontSize: 10, fontWeight: '700' }}>3</Typography></View>
+              <View style={styles.acNum}><Typography variant="mono" color={colors.textMuted} style={{ fontSize: 10, fontWeight: '700' }}>3</Typography></View>
               <View style={styles.acBody}>
                 <Typography variant="body" style={styles.acName}>Deploy Crews</Typography>
                 <Typography variant="body" style={styles.acDesc}>Pending department response</Typography>
@@ -183,25 +186,25 @@ export default function IncidentDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.bg,
+    backgroundColor: colors.bg,
   },
   hero: {
     paddingTop: 24,
     paddingHorizontal: 24,
     paddingBottom: 24,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   sectionContainer: {
     paddingVertical: 20,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
     marginTop: 8,
   },
   sevPill: {
@@ -248,16 +251,16 @@ const styles = StyleSheet.create({
   },
   infoCell: {
     width: '48%',
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
   infoCellK: {
     fontSize: 10,
-    color: theme.colors.textDim,
+    color: colors.textDim,
     marginBottom: 6,
   },
   infoCellV: {
@@ -266,14 +269,14 @@ const styles = StyleSheet.create({
   },
   rationaleBox: {
     marginTop: 16,
-    backgroundColor: 'rgba(14, 165, 233, 0.08)',
+    backgroundColor: isDark ? 'rgba(14, 165, 233, 0.08)' : 'rgba(14, 165, 233, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(14, 165, 233, 0.2)',
     borderRadius: 12,
     padding: 16,
   },
   contraCard: {
-    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.05)' : 'rgba(239, 68, 68, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.2)',
     borderRadius: 16,
@@ -296,30 +299,30 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   srcA: {
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.15)',
     borderColor: 'rgba(239, 68, 68, 0.2)',
     borderWidth: 1,
   },
   srcB: {
-    backgroundColor: theme.colors.greenDim,
-    borderColor: theme.colors.greenGlow,
+    backgroundColor: colors.greenDim,
+    borderColor: colors.greenGlow,
     borderWidth: 1,
   },
   resBadge: {
-    backgroundColor: theme.colors.greenDim,
+    backgroundColor: colors.greenDim,
     borderWidth: 1,
-    borderColor: theme.colors.greenGlow,
+    borderColor: colors.greenGlow,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
   actionChain: {
     flexDirection: 'column',
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
   },
   acStep: {
     flexDirection: 'row',
@@ -331,19 +334,19 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: theme.colors.surface3,
+    backgroundColor: colors.surface3,
     borderWidth: 1.5,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   acDone: {
-    backgroundColor: theme.colors.greenDim,
-    borderColor: theme.colors.green,
+    backgroundColor: colors.greenDim,
+    borderColor: colors.green,
   },
   acAct: {
-    backgroundColor: 'rgba(249, 115, 22, 0.15)',
-    borderColor: theme.colors.high,
+    backgroundColor: isDark ? 'rgba(249, 115, 22, 0.15)' : 'rgba(249, 115, 22, 0.2)',
+    borderColor: colors.high,
   },
   acBody: {
     flex: 1,
@@ -354,7 +357,7 @@ const styles = StyleSheet.create({
   },
   acDesc: {
     fontSize: 12,
-    color: theme.colors.textMuted,
+    color: colors.textMuted,
     marginTop: 4,
   },
 });

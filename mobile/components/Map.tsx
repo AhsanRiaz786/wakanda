@@ -1,18 +1,20 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import { theme } from '../constants/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 import { useRouter } from 'expo-router';
 
 export function Map({ mapStyle, incidents = [] }: { mapStyle: any, incidents?: any[] }) {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = makeStyles(colors, isDark);
 
   const getMarkerColor = (severity: string) => {
     switch (severity) {
-      case 'CRITICAL': return theme.colors.crit;
-      case 'HIGH': return theme.colors.high;
-      case 'LOW': return theme.colors.low;
-      default: return theme.colors.med;
+      case 'CRITICAL': return colors.crit;
+      case 'HIGH': return colors.high;
+      case 'LOW': return colors.low;
+      default: return colors.med;
     }
   };
 
@@ -47,7 +49,7 @@ export function Map({ mapStyle, incidents = [] }: { mapStyle: any, incidents?: a
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   markerRing: {
     width: 24,
     height: 24,

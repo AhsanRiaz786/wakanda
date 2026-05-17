@@ -1,11 +1,14 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { theme } from '../../constants/theme';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { TopBar } from '../../components/TopBar';
 import { Typography } from '../../components/Typography';
 import { FileCode, FileText, ChevronRight, CheckCircle2 } from 'lucide-react-native';
 
 export default function ArtifactsScreen() {
+  const { colors, isDark } = useAppTheme();
+  const styles = makeStyles(colors, isDark);
+  
   const artifacts = [
     {
       id: 'task',
@@ -43,13 +46,13 @@ export default function ArtifactsScreen() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Typography variant="body" color={theme.colors.textMuted} style={styles.description}>
+          <Typography variant="body" color={colors.textMuted} style={styles.description}>
             This screen surfaces the verifiable Antigravity IDE artifacts (A1–A4) as required by the hackathon rubric. These documents prove the agent workflows were developed using the Antigravity IDE.
           </Typography>
         </View>
 
         <View style={styles.sectionContainer}>
-          <Typography variant="label" color={theme.colors.textDim} style={styles.sectionLabel}>
+          <Typography variant="label" color={colors.textDim} style={styles.sectionLabel}>
             DOCS / ANTIGRAVITY /
           </Typography>
 
@@ -57,32 +60,32 @@ export default function ArtifactsScreen() {
             <TouchableOpacity key={doc.id} style={[styles.docCard, idx === 0 && { borderTopWidth: 0 }]}>
               <View style={styles.docIcon}>
                 {doc.type === 'json' ? (
-                  <FileCode size={20} color={theme.colors.low} />
+                  <FileCode size={20} color={colors.low} />
                 ) : (
-                  <FileText size={20} color={theme.colors.high} />
+                  <FileText size={20} color={colors.high} />
                 )}
               </View>
               
               <View style={styles.docInfo}>
                 <Typography variant="body" style={styles.docTitle}>{doc.title}</Typography>
-                <Typography variant="body" color={theme.colors.textMuted} style={styles.docDesc}>
+                <Typography variant="body" color={colors.textMuted} style={styles.docDesc}>
                   {doc.desc}
                 </Typography>
                 <View style={styles.statusRow}>
-                  <CheckCircle2 size={12} color={theme.colors.green} />
-                  <Typography variant="mono" color={theme.colors.green} style={{ fontSize: 10, marginLeft: 4 }}>
+                  <CheckCircle2 size={12} color={colors.green} />
+                  <Typography variant="mono" color={colors.green} style={{ fontSize: 10, marginLeft: 4 }}>
                     {doc.status.toUpperCase()}
                   </Typography>
                 </View>
               </View>
 
-              <ChevronRight size={16} color={theme.colors.textDim} />
+              <ChevronRight size={16} color={colors.textDim} />
             </TouchableOpacity>
           ))}
         </View>
         
         <View style={styles.footerInfo}>
-          <Typography variant="mono" color={theme.colors.textDim} style={{ fontSize: 10, textAlign: 'center' }}>
+          <Typography variant="mono" color={colors.textDim} style={{ fontSize: 10, textAlign: 'center' }}>
             Built with Google Antigravity
           </Typography>
         </View>
@@ -91,16 +94,16 @@ export default function ArtifactsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.bg,
+    backgroundColor: colors.bg,
   },
   header: {
     padding: 24,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   description: {
     fontSize: 14,
@@ -108,14 +111,14 @@ const styles = StyleSheet.create({
   },
   sectionContainer: {
     marginTop: 8,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: colors.surface,
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: colors.border,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderTopColor: colors.border,
   },
   sectionLabel: {
     marginBottom: 16,
@@ -126,17 +129,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border2,
+    borderTopColor: colors.border2,
   },
   docIcon: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: colors.border,
   },
   docInfo: {
     flex: 1,

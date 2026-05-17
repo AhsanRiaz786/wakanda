@@ -3,13 +3,16 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 import { RefreshCw, Play } from 'lucide-react-native';
 
 import { api } from '@/src/lib/api';
-import { theme } from '../../constants/theme';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { TopBar } from '../../components/TopBar';
 import { Typography } from '../../components/Typography';
 import { KpiCard } from '../../components/KpiCard';
 import { TraceNode, TraceNodeType, TraceStatus } from '../../components/TraceNode';
 
 export default function AgentTraceScreen() {
+  const { colors, isDark } = useAppTheme();
+  const styles = makeStyles(colors, isDark);
+  
   const [trace, setTrace] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,41 +48,41 @@ export default function AgentTraceScreen() {
         {/* Run Controls */}
         <View style={styles.controls}>
           <Pressable style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnPressed]} onPress={load} disabled={loading}>
-            <RefreshCw size={16} color={theme.colors.textMuted} />
-            <Typography variant="body" color={theme.colors.text} style={{ fontSize: 13, fontWeight: '500' }}>{loading ? 'Refreshing...' : 'Refresh Trace'}</Typography>
+            <RefreshCw size={16} color={colors.textMuted} />
+            <Typography variant="body" color={colors.text} style={{ fontSize: 13, fontWeight: '500' }}>{loading ? 'Refreshing...' : 'Refresh Trace'}</Typography>
           </Pressable>
           <Pressable style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPressed]}>
-            <Play size={16} color="#000" fill="#000" />
-            <Typography variant="body" color="#000" style={{ fontSize: 13, fontWeight: '700' }}>Run Simulation</Typography>
+            <Play size={16} color={isDark ? "#000" : "#FFF"} fill={isDark ? "#000" : "#FFF"} />
+            <Typography variant="body" color={isDark ? "#000" : "#FFF"} style={{ fontSize: 13, fontWeight: '700' }}>Run Simulation</Typography>
           </Pressable>
         </View>
 
-        {error && <Typography variant="body" color={theme.colors.crit} style={{ paddingHorizontal: 20, marginBottom: 10 }}>{error}</Typography>}
+        {error && <Typography variant="body" color={colors.crit} style={{ paddingHorizontal: 20, marginBottom: 10 }}>{error}</Typography>}
 
         {/* KPIs */}
         <View style={styles.kpiRow}>
-          <KpiCard number={summary?.totalSteps || 0} label="STEPS" color={theme.colors.text} />
+          <KpiCard number={summary?.totalSteps || 0} label="STEPS" color={colors.text} />
           <KpiCard number={summary?.totalLLMCalls || 0} label="LLM CALLS" color="#A78BFA" />
-          <KpiCard number={summary?.totalToolCalls || 0} label="TOOLS" color={theme.colors.low} />
-          <KpiCard number={`${(summary?.totalDurationMs || 0) / 1000}s`} label="DURATION" color={theme.colors.text} />
+          <KpiCard number={summary?.totalToolCalls || 0} label="TOOLS" color={colors.low} />
+          <KpiCard number={`${(summary?.totalDurationMs || 0) / 1000}s`} label="DURATION" color={colors.text} />
         </View>
 
         {/* Tree Header */}
         <View style={styles.treeHeader}>
-          <Typography variant="label" color={theme.colors.textDim} style={{ letterSpacing: 1.5, fontSize: 11 }}>EXECUTION GRAPH</Typography>
+          <Typography variant="label" color={colors.textDim} style={{ letterSpacing: 1.5, fontSize: 11 }}>EXECUTION GRAPH</Typography>
           <View style={styles.statusBadge}>
             <View style={styles.pulseDot} />
-            <Typography variant="mono" color={theme.colors.green} style={{ fontSize: 10, fontWeight: '700' }}>ONLINE</Typography>
+            <Typography variant="mono" color={colors.green} style={{ fontSize: 10, fontWeight: '700' }}>ONLINE</Typography>
           </View>
         </View>
 
         {/* Trace List */}
         <View style={styles.traceContainer}>
           {loading && !trace ? (
-            <ActivityIndicator color={theme.colors.green} style={{ marginVertical: 40 }} />
+            <ActivityIndicator color={colors.green} style={{ marginVertical: 40 }} />
           ) : steps.length === 0 ? (
             <View style={styles.emptyState}>
-              <Typography variant="body" color={theme.colors.textMuted} style={{ textAlign: 'center' }}>
+              <Typography variant="body" color={colors.textMuted} style={{ textAlign: 'center' }}>
                 No trace available. Run a simulation first.
               </Typography>
             </View>
@@ -124,10 +127,10 @@ export default function AgentTraceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: theme.colors.bg 
+    backgroundColor: colors.bg 
   },
   controls: {
     flexDirection: 'row',
@@ -135,8 +138,8 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   btnSecondary: {
     flex: 1,
@@ -144,9 +147,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     borderRadius: 12,
     paddingVertical: 14,
   },
@@ -156,10 +159,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: theme.colors.green,
+    backgroundColor: colors.green,
     borderRadius: 12,
     paddingVertical: 14,
-    shadowColor: theme.colors.green,
+    shadowColor: colors.green,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -174,8 +177,8 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   treeHeader: {
     flexDirection: 'row',
@@ -191,39 +194,39 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    backgroundColor: theme.colors.greenDim,
+    backgroundColor: colors.greenDim,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: theme.colors.greenGlow,
+    borderColor: colors.greenGlow,
   },
   pulseDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: theme.colors.green,
+    backgroundColor: colors.green,
   },
   traceContainer: {
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
   traceTree: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: isDark ? 0.2 : 0.05,
     shadowRadius: 8,
     elevation: 5,
   },
   emptyState: {
     padding: 32,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: colors.border,
     alignItems: 'center',
   }
 });

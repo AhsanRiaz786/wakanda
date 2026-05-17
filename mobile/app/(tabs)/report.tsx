@@ -3,11 +3,14 @@ import { Pressable, StyleSheet, TextInput, View, ActivityIndicator, KeyboardAvoi
 import { Camera, MapPin, Upload } from 'lucide-react-native';
 
 import { api } from '@/src/lib/api';
-import { theme } from '../../constants/theme';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { TopBar } from '../../components/TopBar';
 import { Typography } from '../../components/Typography';
 
 export default function ReportIncidentScreen() {
+  const { colors, isDark } = useAppTheme();
+  const styles = makeStyles(colors, isDark);
+  
   const [description, setDescription] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,38 +43,38 @@ export default function ReportIncidentScreen() {
       <View style={styles.content}>
         {message ? (
           <View style={styles.msgBox}>
-            <Typography variant="body" color={theme.colors.green}>{message}</Typography>
+            <Typography variant="body" color={colors.green}>{message}</Typography>
           </View>
         ) : null}
         
         {error ? (
           <View style={[styles.msgBox, { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }]}>
-            <Typography variant="body" color={theme.colors.crit}>{error}</Typography>
+            <Typography variant="body" color={colors.crit}>{error}</Typography>
           </View>
         ) : null}
 
         <View style={styles.locBox}>
-          <MapPin size={18} color={theme.colors.textDim} />
+          <MapPin size={18} color={colors.textDim} />
           <Typography variant="body" style={{ flex: 1, fontSize: 13 }}>Location auto-detected: Sector G-11</Typography>
         </View>
 
-        <Typography variant="label" color={theme.colors.textDim} style={{ marginBottom: 12, marginTop: 16, letterSpacing: 1 }}>OBSERVATION</Typography>
+        <Typography variant="label" color={colors.textDim} style={{ marginBottom: 12, marginTop: 16, letterSpacing: 1 }}>OBSERVATION</Typography>
         <TextInput
           style={styles.input}
           multiline
           value={description}
           onChangeText={setDescription}
           placeholder="Describe the situation in detail..."
-          placeholderTextColor={theme.colors.textMuted}
+          placeholderTextColor={colors.textMuted}
         />
 
         <View style={styles.attachRow}>
           <Pressable style={({ pressed }) => [styles.attachBtn, pressed && styles.pressedState]}>
-            <Camera size={18} color={theme.colors.text} />
+            <Camera size={18} color={colors.text} />
             <Typography variant="body" style={{ fontSize: 13, fontWeight: '500' }}>Take Photo</Typography>
           </Pressable>
           <Pressable style={({ pressed }) => [styles.attachBtn, pressed && styles.pressedState]}>
-            <Upload size={18} color={theme.colors.text} />
+            <Upload size={18} color={colors.text} />
             <Typography variant="body" style={{ fontSize: 13, fontWeight: '500' }}>Upload Media</Typography>
           </Pressable>
         </View>
@@ -88,9 +91,9 @@ export default function ReportIncidentScreen() {
           disabled={!description.trim() || loading}
         >
           {loading ? (
-            <ActivityIndicator color={theme.colors.surface} />
+            <ActivityIndicator color={colors.surface} />
           ) : (
-            <Typography variant="heading" color={theme.colors.bg} style={{ fontSize: 15, letterSpacing: 0.5 }}>Submit Report</Typography>
+            <Typography variant="heading" color={isDark ? colors.bg : colors.surface} style={{ fontSize: 15, letterSpacing: 0.5 }}>Submit Report</Typography>
           )}
         </Pressable>
       </View>
@@ -98,10 +101,10 @@ export default function ReportIncidentScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.bg,
+    backgroundColor: colors.bg,
   },
   content: {
     flex: 1,
@@ -110,9 +113,9 @@ const styles = StyleSheet.create({
   },
   msgBox: {
     padding: 14,
-    backgroundColor: theme.colors.greenDim,
+    backgroundColor: colors.greenDim,
     borderWidth: 1,
-    borderColor: theme.colors.greenGlow,
+    borderColor: colors.greenGlow,
     borderRadius: 12,
     marginBottom: 20,
   },
@@ -120,27 +123,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     marginBottom: 16,
   },
   input: {
     minHeight: 180,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     borderRadius: 16,
     padding: 20,
     paddingTop: 20,
-    color: theme.colors.text,
+    color: colors.text,
     fontSize: 15,
     textAlignVertical: 'top',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: isDark ? 0.1 : 0.05,
     shadowRadius: 8,
   },
   attachRow: {
@@ -155,19 +158,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     paddingVertical: 14,
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
   },
   submitBtn: {
-    backgroundColor: theme.colors.green,
+    backgroundColor: colors.green,
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
-    shadowColor: theme.colors.green,
+    shadowColor: colors.green,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,

@@ -5,7 +5,7 @@ import { Search, ChevronDown, Activity, MapPin, Clock, Navigation } from 'lucide
 import { Typography } from '../../components/Typography';
 import { TopBar } from '../../components/TopBar';
 import { SeverityBadge, StatusBadge, SourcePill } from '../../components/Badges';
-import { theme } from '../../constants/theme';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { api } from '@/src/lib/api';
 
 type IncidentRow = {
@@ -23,6 +23,9 @@ const FILTERS = ['All', 'Reported', 'Triaged', 'Assigned', 'In Progress', 'Resol
 
 export default function IncidentsScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = makeStyles(colors, isDark);
+  
   const [items, setItems] = useState<IncidentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,15 +49,19 @@ export default function IncidentsScreen() {
   }, [load]);
 
   const getBorderColor = (sev: string | undefined) => {
-    if (sev === 'CRITICAL') return theme.colors.crit;
-    if (sev === 'HIGH') return theme.colors.high;
-    if (sev === 'MEDIUM') return theme.colors.med;
-    return theme.colors.low;
+    if (sev === 'CRITICAL') return colors.crit;
+    if (sev === 'HIGH') return colors.high;
+    if (sev === 'MEDIUM') return colors.med;
+    return colors.low;
   };
 
   const getSeverity = (sev: string | undefined) => {
     return (sev || 'LOW') as any;
   };
+
+  const filteredItems = activeFilter === 'All'
+    ? items
+    : items.filter(item => (item.status || 'Reported').toLowerCase() === activeFilter.toLowerCase());
 
   return (
     <View style={styles.container}>
@@ -63,18 +70,18 @@ export default function IncidentsScreen() {
       {/* Controls */}
       <View style={styles.controls}>
         <View style={styles.searchBar}>
-          <Search size={18} color={theme.colors.textDim} />
-          <Typography variant="body" color={theme.colors.textDim} style={{ fontSize: 14 }}>
+          <Search size={18} color={colors.textDim} />
+          <Typography variant="body" color={colors.textDim} style={{ fontSize: 14 }}>
             Search incidents by ID, area...
           </Typography>
         </View>
 
         <View style={styles.sortRow}>
           <View style={styles.sortBtn}>
-            <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 12, fontWeight: '600' }}>
+            <Typography variant="body" color={colors.textMuted} style={{ fontSize: 12, fontWeight: '600' }}>
               Sort: Newest
             </Typography>
-            <ChevronDown size={14} color={theme.colors.textMuted} />
+            <ChevronDown size={14} color={colors.textMuted} />
           </View>
           
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sfRow} contentContainerStyle={{ paddingRight: 16 }}>
@@ -84,7 +91,7 @@ export default function IncidentsScreen() {
                 style={[styles.sf, activeFilter === f && styles.sfActive]}
                 onPress={() => setActiveFilter(f)}
               >
-                <Typography variant="mono" style={{ fontSize: 11, fontWeight: '700' }} color={activeFilter === f ? theme.colors.green : theme.colors.textDim}>
+                <Typography variant="mono" style={{ fontSize: 11, fontWeight: '700' }} color={activeFilter === f ? colors.green : colors.textDim}>
                   {f}
                 </Typography>
               </TouchableOpacity>
@@ -95,7 +102,7 @@ export default function IncidentsScreen() {
 
       {/* List */}
       <FlatList
-        data={items}
+        data={filteredItems}
         keyExtractor={(item) => item.incidentId}
         refreshing={loading}
         onRefresh={load}
@@ -115,7 +122,7 @@ export default function IncidentsScreen() {
                     <Typography variant="heading" style={{ fontSize: 15, marginBottom: 2 }} numberOfLines={1}>
                       {item.title || item.description || `Incident ${item.incidentId.split('-')[0]}`}
                     </Typography>
-                    <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 12 }}>
+                    <Typography variant="body" color={colors.textMuted} style={{ fontSize: 12 }} numberOfLines={2}>
                       {item.description || 'No description provided.'}
                     </Typography>
                   </View>
@@ -123,14 +130,14 @@ export default function IncidentsScreen() {
 
                 <View style={styles.incMetaRow}>
                   <View style={styles.metaItem}>
-                    <MapPin size={12} color={theme.colors.green} />
-                    <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 11, marginLeft: 4 }}>
-                      1.2 km away
+                    <MapPin size={12} color={colors.green} />
+                    <Typography variant="body" color={colors.textMuted} style={{ fontSize: 11, marginLeft: 4 }}>
+                      {item.district || 'City District'}
                     </Typography>
                   </View>
                   <View style={styles.metaItem}>
-                    <Clock size={12} color={theme.colors.green} />
-                    <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 11, marginLeft: 4 }}>
+                    <Activity size={12} color={sevColor} />
+                    <Typography variant="body" color={colors.textMuted} style={{ fontSize: 11, marginLeft: 4 }}>
                       {(item.status || 'REPORTED').toUpperCase()}
                     </Typography>
                   </View>
@@ -139,21 +146,21 @@ export default function IncidentsScreen() {
                 <View style={styles.incTags}>
                   <SeverityBadge severity={getSeverity(item.severity)} />
                   <View style={styles.tagPill}>
-                    <Typography variant="mono" style={{ fontSize: 10, color: theme.colors.textDim }}>
-                      {item.sourceLabel || 'LIVE FEED'}
+                    <Typography variant="mono" style={{ fontSize: 10, color: colors.textDim }}>
+                      {item.sourceLabel || item.sourceType || 'LIVE FEED'}
                     </Typography>
                   </View>
                   <View style={styles.tagPill}>
-                    <Typography variant="mono" style={{ fontSize: 10, color: theme.colors.textDim }}>
-                      {item.department || 'UNASSIGNED'}
+                    <Typography variant="mono" style={{ fontSize: 10, color: colors.textDim }}>
+                      {item.department || item.assignedDepartments?.[0] || 'UNASSIGNED'}
                     </Typography>
                   </View>
                 </View>
 
                 <View style={styles.incActions}>
                   <View style={styles.btnPrimary}>
-                    <Navigation size={14} color="#000" />
-                    <Typography variant="heading" style={{ fontSize: 13, color: '#000', marginLeft: 6 }}>
+                    <Navigation size={14} color={isDark ? '#000' : '#FFF'} />
+                    <Typography variant="heading" style={{ fontSize: 13, color: isDark ? '#000' : '#FFF', marginLeft: 6 }}>
                       View Details
                     </Typography>
                   </View>
@@ -164,33 +171,39 @@ export default function IncidentsScreen() {
           );
         }}
         ListEmptyComponent={
-          !loading ? <Typography variant="body" style={styles.empty}>No incidents — seed backend first.</Typography> : null
+          !loading ? (
+            <View style={{ alignItems: 'center', paddingTop: 48 }}>
+              <Typography variant="body" style={styles.empty}>
+                {activeFilter === 'All' ? 'No incidents — seed backend first.' : `No "${activeFilter}" incidents.`}
+              </Typography>
+            </View>
+          ) : null
         }
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: theme.colors.bg 
+    backgroundColor: colors.bg 
   },
   controls: {
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -205,9 +218,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -223,22 +236,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
     marginRight: 6,
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
   },
   sfActive: {
-    backgroundColor: theme.colors.greenDim,
-    borderColor: theme.colors.greenGlow,
+    backgroundColor: colors.greenDim,
+    borderColor: colors.greenGlow,
   },
   incCard: {
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: isDark ? 0.15 : 0.05,
     shadowRadius: 8,
     elevation: 3,
   },
@@ -275,12 +288,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   tagPill: {
-    backgroundColor: theme.colors.surface3,
+    backgroundColor: colors.surface3,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: colors.border,
   },
   incActions: {
     flexDirection: 'row',
@@ -292,12 +305,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    backgroundColor: theme.colors.green,
+    backgroundColor: colors.green,
     paddingVertical: 12,
     borderRadius: 12,
   },
   empty: { 
-    color: theme.colors.textMuted, 
+    color: colors.textMuted, 
     textAlign: 'center', 
     marginTop: 32 
   },

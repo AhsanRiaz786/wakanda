@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Brain, Wrench, GitMerge, Database, AlertTriangle } from 'lucide-react-native';
 import { Typography } from './Typography';
-import { theme } from '../constants/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 
 export type TraceNodeType = 'llm' | 'tool' | 'decision' | 'state' | 'error';
 export type TraceStatus = 'ok' | 'warn' | 'error';
@@ -18,22 +18,24 @@ interface TraceNodeProps {
 }
 
 export function TraceNode({ type, title, detail, status, durationMs, isIndented, rationale }: TraceNodeProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = makeStyles(colors, isDark);
   
   const getNodeConfig = () => {
     switch (type) {
       case 'llm': return { bg: 'rgba(139,92,246,0.12)', border: 'rgba(139,92,246,0.3)', color: '#A78BFA', icon: Brain };
-      case 'tool': return { bg: 'rgba(76,201,240,0.1)', border: 'rgba(76,201,240,0.25)', color: theme.colors.low, icon: Wrench };
-      case 'decision': return { bg: 'rgba(255,214,10,0.08)', border: 'rgba(255,214,10,0.25)', color: theme.colors.med, icon: GitMerge };
-      case 'state': return { bg: theme.colors.greenDim, border: theme.colors.greenGlow, color: theme.colors.green, icon: Database };
-      case 'error': return { bg: 'rgba(255,71,87,0.08)', border: 'rgba(255,71,87,0.2)', color: theme.colors.crit, icon: AlertTriangle };
+      case 'tool': return { bg: 'rgba(76,201,240,0.1)', border: 'rgba(76,201,240,0.25)', color: colors.low, icon: Wrench };
+      case 'decision': return { bg: 'rgba(255,214,10,0.08)', border: 'rgba(255,214,10,0.25)', color: colors.med, icon: GitMerge };
+      case 'state': return { bg: colors.greenDim, border: colors.greenGlow, color: colors.green, icon: Database };
+      case 'error': return { bg: 'rgba(255,71,87,0.08)', border: 'rgba(255,71,87,0.2)', color: colors.crit, icon: AlertTriangle };
     }
   };
 
   const getStatusConfig = () => {
     switch (status) {
-      case 'ok': return { bg: theme.colors.greenDim, color: theme.colors.green, text: 'SUCCESS' };
-      case 'warn': return { bg: 'rgba(255,214,10,0.1)', color: theme.colors.med, text: 'WARNING' };
-      case 'error': return { bg: 'rgba(255,71,87,0.1)', color: theme.colors.crit, text: 'FAILURE' };
+      case 'ok': return { bg: colors.greenDim, color: colors.green, text: 'SUCCESS' };
+      case 'warn': return { bg: 'rgba(255,214,10,0.1)', color: colors.med, text: 'WARNING' };
+      case 'error': return { bg: 'rgba(255,71,87,0.1)', color: colors.crit, text: 'FAILURE' };
     }
   };
 
@@ -52,7 +54,7 @@ export function TraceNode({ type, title, detail, status, durationMs, isIndented,
 
         <View style={styles.body}>
           <Typography variant="body" style={{ fontSize: 11, fontWeight: '600' }}>{title}</Typography>
-          <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 10, marginTop: 1 }} numberOfLines={1}>
+          <Typography variant="body" color={colors.textMuted} style={{ fontSize: 10, marginTop: 1 }} numberOfLines={1}>
             {detail}
           </Typography>
         </View>
@@ -63,7 +65,7 @@ export function TraceNode({ type, title, detail, status, durationMs, isIndented,
               {sConfig.text}
             </Typography>
           </View>
-          <Typography variant="mono" color={theme.colors.textDim} style={{ fontSize: 9 }}>
+          <Typography variant="mono" color={colors.textDim} style={{ fontSize: 9 }}>
             {durationMs}ms
           </Typography>
         </View>
@@ -71,7 +73,7 @@ export function TraceNode({ type, title, detail, status, durationMs, isIndented,
 
       {rationale && (
         <View style={styles.rationaleBox}>
-          <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 10, lineHeight: 15 }}>
+          <Typography variant="body" color={colors.textMuted} style={{ fontSize: 10, lineHeight: 15 }}>
             {rationale}
           </Typography>
         </View>
@@ -80,7 +82,7 @@ export function TraceNode({ type, title, detail, status, durationMs, isIndented,
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     paddingVertical: 8,
   },
@@ -101,7 +103,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderLeftWidth: 1.5,
     borderBottomWidth: 1.5,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     borderBottomLeftRadius: 8,
   },
   iconBox: {
@@ -126,9 +128,9 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   rationaleBox: {
-    backgroundColor: 'rgba(255,214,10,0.04)',
+    backgroundColor: isDark ? 'rgba(255,214,10,0.04)' : 'rgba(255,214,10,0.1)',
     borderLeftWidth: 2,
-    borderLeftColor: 'rgba(255,214,10,0.35)',
+    borderLeftColor: 'rgba(255,214,10,0.4)',
     borderTopRightRadius: 6,
     borderBottomRightRadius: 6,
     paddingVertical: 6,

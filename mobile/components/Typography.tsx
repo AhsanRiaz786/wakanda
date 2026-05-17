@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, TextProps, StyleSheet } from 'react-native';
-import { theme } from '../constants/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 
 interface TypographyProps extends TextProps {
   variant?: 'title' | 'subtitle' | 'heading' | 'body' | 'label' | 'mono';
@@ -11,17 +11,20 @@ interface TypographyProps extends TextProps {
 
 export function Typography({
   variant = 'body',
-  color = theme.colors.text,
+  color,
   weight,
   align,
   style,
   ...props
 }: TypographyProps) {
+  const { colors } = useAppTheme();
+  const finalColor = color || colors.text;
+
   return (
     <Text
       style={[
         styles[variant],
-        { color },
+        { color: finalColor },
         weight && { fontWeight: weight },
         align && { textAlign: align },
         style,
@@ -33,35 +36,35 @@ export function Typography({
 
 const styles = StyleSheet.create({
   title: {
-    fontFamily: theme.typography.heading.fontFamily,
+    fontFamily: 'System',
     fontSize: 36,
     fontWeight: '700',
     letterSpacing: -0.5,
   },
   heading: {
-    fontFamily: theme.typography.heading.fontFamily,
+    fontFamily: 'System',
     fontSize: 22,
     fontWeight: '700',
   },
   subtitle: {
-    fontFamily: theme.typography.body.fontFamily,
+    fontFamily: 'System',
     fontSize: 16,
     fontWeight: '600',
   },
   body: {
-    fontFamily: theme.typography.body.fontFamily,
+    fontFamily: 'System',
     fontSize: 14,
     fontWeight: '400',
   },
   label: {
-    fontFamily: theme.typography.mono.fontFamily,
+    fontFamily: 'System',
     fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1.2,
   },
   mono: {
-    fontFamily: theme.typography.mono.fontFamily,
+    fontFamily: 'Courier',
     fontSize: 11,
     fontWeight: '500',
   },

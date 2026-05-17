@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Animated, PanResponder, Platform } from 'react-native';
-import { theme } from '../../constants/theme';
 import { TopBar } from '../../components/TopBar';
 import { Typography } from '../../components/Typography';
 import { SeverityBadge } from '../../components/Badges';
@@ -8,6 +7,7 @@ import { Play, MapPin, Activity, Clock, Navigation } from 'lucide-react-native';
 import { api } from '@/src/lib/api';
 import { Map } from '../../components/Map';
 import { useRouter } from 'expo-router';
+import { useAppTheme } from '../../hooks/useAppTheme';
 
 const { height } = Dimensions.get('window');
 
@@ -20,6 +20,9 @@ const SNAP_BOT = height * 0.62;
 
 export default function MapDashboardScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = makeStyles(colors, isDark);
+  
   const [activeFilter, setActiveFilter] = useState('All');
   const [loading, setLoading] = useState(false);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -105,7 +108,7 @@ export default function MapDashboardScreen() {
     return true;
   });
 
-  const mapStyle = [
+  const darkMapStyle = [
     { elementType: 'geometry', stylers: [{ color: '#09090B' }] },
     { elementType: 'labels.text.fill', stylers: [{ color: '#71717A' }] },
     { elementType: 'labels.text.stroke', stylers: [{ color: '#09090B' }] },
@@ -121,11 +124,27 @@ export default function MapDashboardScreen() {
     { featureType: 'water', elementType: 'labels.text.stroke', stylers: [{ color: '#09090B' }] }
   ];
 
+  const lightMapStyle = [
+    { elementType: 'geometry', stylers: [{ color: '#F9FAFB' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#6B7280' }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#F9FAFB' }] },
+    { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ color: '#E5E7EB' }] },
+    { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
+    { featureType: 'administrative.neighborhood', stylers: [{ visibility: 'off' }] },
+    { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFFFF' }] },
+    { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#E5E7EB' }] },
+    { featureType: 'road', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#E0F2FE' }] }, // light blue for water
+    { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#0284C7' }] },
+    { featureType: 'water', elementType: 'labels.text.stroke', stylers: [{ color: '#E0F2FE' }] }
+  ];
+
   return (
     <View style={styles.container}>
       {/* Background Map spanning full height */}
       <View style={StyleSheet.absoluteFill}>
-        <Map mapStyle={mapStyle} incidents={filteredIncidents} />
+        <Map mapStyle={isDark ? darkMapStyle : lightMapStyle} incidents={filteredIncidents} />
       </View>
 
       {/* TopBar overlapping Map */}
@@ -148,10 +167,10 @@ export default function MapDashboardScreen() {
             <MapPin size={20} color="#fff" />
           </View>
           <View>
-            <Typography variant="heading" style={{ fontSize: 14, color: theme.colors.text }}>
+            <Typography variant="heading" style={{ fontSize: 14, color: colors.text }}>
               {filteredIncidents.length} Anomalies Found
             </Typography>
-            <Typography variant="body" style={{ fontSize: 12, color: theme.colors.textDim }}>
+            <Typography variant="body" style={{ fontSize: 12, color: colors.textDim }}>
               Within city limits
             </Typography>
           </View>
@@ -173,11 +192,11 @@ export default function MapDashboardScreen() {
               disabled={loading || !!planId}
             >
               {loading ? (
-                <ActivityIndicator color="#000" />
+                <ActivityIndicator color={isDark ? '#000' : '#FFF'} />
               ) : (
                 <>
-                  <Play size={18} color="#000" fill="#000" />
-                  <Typography variant="heading" style={{ fontSize: 15, letterSpacing: 0.5, color: '#000' }}>
+                  <Play size={18} color={isDark ? '#000' : '#FFF'} fill={isDark ? '#000' : '#FFF'} />
+                  <Typography variant="heading" style={{ fontSize: 15, letterSpacing: 0.5, color: planId ? colors.greenDeep : (isDark ? '#000' : '#FFF') }}>
                     {planId ? 'Agent Plan Deployed ✓' : 'Run Autonomous Plan'}
                   </Typography>
                 </>
@@ -192,7 +211,7 @@ export default function MapDashboardScreen() {
                   style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
                   onPress={() => setActiveFilter(f)}
                 >
-                  <Typography variant="body" style={{ fontSize: 13, fontWeight: '600' }} color={activeFilter === f ? theme.colors.greenSoft : theme.colors.textMuted}>
+                  <Typography variant="body" style={{ fontSize: 13, fontWeight: '600' }} color={activeFilter === f ? colors.greenSoft : colors.textMuted}>
                     {f}
                   </Typography>
                 </TouchableOpacity>
@@ -201,7 +220,7 @@ export default function MapDashboardScreen() {
 
             {/* List of Incident Cards inspired by screenshot */}
             {filteredIncidents.slice(0, 10).map((inc) => {
-              const sevColor = inc.severity === 'CRITICAL' ? theme.colors.crit : inc.severity === 'HIGH' ? theme.colors.high : inc.severity === 'LOW' ? theme.colors.low : theme.colors.med;
+              const sevColor = inc.severity === 'CRITICAL' ? colors.crit : inc.severity === 'HIGH' ? colors.high : inc.severity === 'LOW' ? colors.low : colors.med;
               
               return (
                 <View key={inc.incidentId} style={styles.incCard}>
@@ -213,7 +232,7 @@ export default function MapDashboardScreen() {
                       <Typography variant="heading" style={{ fontSize: 15, marginBottom: 2 }} numberOfLines={1}>
                         {inc.title || inc.description}
                       </Typography>
-                      <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 12 }}>
+                      <Typography variant="body" color={colors.textMuted} style={{ fontSize: 12 }}>
                         {inc.description}
                       </Typography>
                     </View>
@@ -221,14 +240,14 @@ export default function MapDashboardScreen() {
 
                   <View style={styles.incMetaRow}>
                     <View style={styles.metaItem}>
-                      <MapPin size={12} color={theme.colors.green} />
-                      <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 11, marginLeft: 4 }}>
+                      <MapPin size={12} color={colors.green} />
+                      <Typography variant="body" color={colors.textMuted} style={{ fontSize: 11, marginLeft: 4 }}>
                         1.2 km away
                       </Typography>
                     </View>
                     <View style={styles.metaItem}>
-                      <Clock size={12} color={theme.colors.green} />
-                      <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 11, marginLeft: 4 }}>
+                      <Clock size={12} color={colors.green} />
+                      <Typography variant="body" color={colors.textMuted} style={{ fontSize: 11, marginLeft: 4 }}>
                         {(inc.status || 'REPORTED').toUpperCase()}
                       </Typography>
                     </View>
@@ -237,13 +256,13 @@ export default function MapDashboardScreen() {
                   <View style={styles.incTags}>
                     <SeverityBadge severity={inc.severity || 'UNKNOWN'} />
                     <View style={styles.tagPill}>
-                      <Typography variant="mono" style={{ fontSize: 10, color: theme.colors.textDim }}>
+                      <Typography variant="mono" style={{ fontSize: 10, color: colors.textDim }}>
                         {inc.sourceType || 'LIVE FEED'}
                       </Typography>
                     </View>
                     {inc.assignedDepartments?.map((dept: string) => (
                       <View key={dept} style={styles.tagPill}>
-                        <Typography variant="mono" style={{ fontSize: 10, color: theme.colors.textDim }}>
+                        <Typography variant="mono" style={{ fontSize: 10, color: colors.textDim }}>
                           {dept}
                         </Typography>
                       </View>
@@ -255,8 +274,8 @@ export default function MapDashboardScreen() {
                       style={styles.btnPrimary}
                       onPress={() => inc.incidentId && router.push(`/incident/${inc.incidentId}`)}
                     >
-                      <Navigation size={14} color="#000" />
-                      <Typography variant="heading" style={{ fontSize: 13, color: '#000', marginLeft: 6 }}>
+                      <Navigation size={14} color={isDark ? '#000' : '#FFF'} />
+                      <Typography variant="heading" style={{ fontSize: 13, color: isDark ? '#000' : '#FFF', marginLeft: 6 }}>
                         View Details
                       </Typography>
                     </TouchableOpacity>
@@ -271,10 +290,10 @@ export default function MapDashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.bg,
+    backgroundColor: colors.bg,
   },
   topBarWrapper: {
     position: 'absolute',
@@ -282,7 +301,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
-    backgroundColor: 'rgba(9, 9, 11, 0.7)', // Slightly transparent background so text is readable over map
+    backgroundColor: isDark ? 'rgba(9, 9, 11, 0.7)' : 'rgba(255, 255, 255, 0.7)', 
   },
   sheetWrapper: {
     position: 'absolute',
@@ -297,44 +316,44 @@ const styles = StyleSheet.create({
     top: -80, // Sits exactly above the sheet
     left: 20,
     right: 20,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
+    shadowOpacity: isDark ? 0.4 : 0.1,
     shadowRadius: 16,
     elevation: 8,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: colors.border,
   },
   floatingCardIconBox: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: theme.colors.greenDeep,
+    backgroundColor: colors.greenDeep,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   bottomSheetContainer: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.3,
+    shadowOpacity: isDark ? 0.3 : 0.1,
     shadowRadius: 16,
     elevation: 12,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border2,
+    borderTopColor: colors.border2,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderLeftColor: theme.colors.border2,
-    borderRightColor: theme.colors.border2,
+    borderLeftColor: colors.border2,
+    borderRightColor: colors.border2,
   },
   dragZone: {
     width: '100%',
@@ -346,7 +365,7 @@ const styles = StyleSheet.create({
   sheetHandle: {
     width: 48,
     height: 5,
-    backgroundColor: theme.colors.surface3,
+    backgroundColor: colors.surface3,
     borderRadius: 3,
   },
   sheetScroll: {
@@ -357,7 +376,7 @@ const styles = StyleSheet.create({
     paddingBottom: 200, // Extra padding at bottom to clear bottom nav
   },
   runBtn: {
-    backgroundColor: theme.colors.green,
+    backgroundColor: colors.green,
     borderRadius: 16,
     paddingVertical: 16,
     flexDirection: 'row',
@@ -365,14 +384,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
     marginBottom: 16,
-    shadowColor: theme.colors.green,
+    shadowColor: colors.green,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
   runBtnSuccess: {
-    backgroundColor: theme.colors.greenSoft,
+    backgroundColor: colors.greenSoft,
     shadowColor: 'transparent',
   },
   filterRow: {
@@ -384,24 +403,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: colors.border,
     marginRight: 8,
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
   },
   filterChipActive: {
-    backgroundColor: theme.colors.greenDeep,
-    borderColor: theme.colors.green,
+    backgroundColor: colors.greenDeep,
+    borderColor: colors.green,
   },
   incCard: {
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: isDark ? 0.15 : 0.05,
     shadowRadius: 8,
     elevation: 3,
   },
@@ -438,12 +457,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   tagPill: {
-    backgroundColor: theme.colors.surface3,
+    backgroundColor: colors.surface3,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: colors.border,
   },
   incActions: {
     flexDirection: 'row',
@@ -455,7 +474,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    backgroundColor: theme.colors.green,
+    backgroundColor: colors.green,
     paddingVertical: 12,
     borderRadius: 12,
   },
@@ -463,9 +482,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.surface3,
+    backgroundColor: colors.surface3,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: colors.border,
     paddingVertical: 12,
     borderRadius: 12,
   },
