@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Bell, ChevronLeft } from 'lucide-react-native';
 import { Typography } from './Typography';
-import { theme } from '../constants/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 
 interface TopBarProps {
   title: string;
@@ -23,12 +23,14 @@ export function TopBar({
   onRightPress,
   transparent = false
 }: TopBarProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = makeStyles(colors, isDark);
   
   return (
     <View style={[styles.container, transparent && styles.transparent]}>
       {leftIcon === 'back' && (
         <TouchableOpacity style={styles.iconBtn} onPress={onLeftPress}>
-          <ChevronLeft color={theme.colors.textMuted} size={20} />
+          <ChevronLeft color={colors.textMuted} size={20} />
         </TouchableOpacity>
       )}
 
@@ -37,7 +39,7 @@ export function TopBar({
           <View style={styles.pulseDot} />
           <View>
             <Typography variant="heading" style={{ fontSize: 14 }}>{title}</Typography>
-            {subtitle && <Typography variant="body" color={theme.colors.textMuted} style={{ fontSize: 10, marginTop: 1 }}>{subtitle}</Typography>}
+            {subtitle && <Typography variant="body" color={colors.textMuted} style={{ fontSize: 10, marginTop: 1 }}>{subtitle}</Typography>}
           </View>
         </View>
       ) : (
@@ -49,7 +51,7 @@ export function TopBar({
 
       {rightIcon === 'bell' && (
         <TouchableOpacity style={[styles.iconBtn, { marginLeft: 10 }]} onPress={onRightPress}>
-          <Bell color={theme.colors.textMuted} size={18} />
+          <Bell color={colors.textMuted} size={18} />
           <View style={styles.notificationDot} />
         </TouchableOpacity>
       )}
@@ -57,16 +59,16 @@ export function TopBar({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 48,
     paddingBottom: 10,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: colors.border,
     zIndex: 100,
   },
   transparent: {
@@ -79,9 +81,9 @@ const styles = StyleSheet.create({
   },
   pillContainer: {
     flex: 1,
-    backgroundColor: 'rgba(8,14,18,0.92)',
+    backgroundColor: isDark ? 'rgba(8,14,18,0.92)' : 'rgba(255,255,255,0.92)',
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     borderRadius: 18,
     paddingVertical: 10,
     paddingHorizontal: 16,
@@ -93,8 +95,8 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: theme.colors.green,
-    shadowColor: theme.colors.green,
+    backgroundColor: colors.green,
+    shadowColor: colors.green,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 4,
@@ -103,9 +105,9 @@ const styles = StyleSheet.create({
   iconBtn: {
     width: 42,
     height: 42,
-    backgroundColor: 'rgba(8,14,18,0.92)',
+    backgroundColor: isDark ? 'rgba(8,14,18,0.92)' : 'rgba(255,255,255,0.92)',
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
@@ -117,9 +119,9 @@ const styles = StyleSheet.create({
     right: 10,
     width: 6,
     height: 6,
-    backgroundColor: theme.colors.crit,
+    backgroundColor: colors.crit,
     borderRadius: 3,
     borderWidth: 1.5,
-    borderColor: theme.colors.surface,
+    borderColor: colors.surface,
   },
 });

@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Platform } from 'react-native';
 import { Audio } from 'expo-av';
+import { useStatus } from '../contexts/StatusContext';
 
 export interface VoiceCommandResponse {
   transcript: string;
@@ -10,45 +11,82 @@ export interface VoiceCommandResponse {
   audio_b64: string;
 }
 
-export function useVoiceCommand(apiUrl: string) {
+export interface VoiceCommandCallbacks {
+  /** Called after a successful ingest intent so the caller can refresh their list */
+  onIngestSuccess?: () => void;
+  /** Called after any successful command with the full response */
+  onSuccess?: (res: VoiceCommandResponse) => void;
+}
+
+export function useVoiceCommand(apiUrl: string, callbacks?: VoiceCommandCallbacks) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [summary, setSummary] = useState('');
+  const [intent, setIntent] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [hasResult, setHasResult] = useState(false);
+
+  const { showStatus, updateStatus } = useStatus();
 
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const statusIdRef = useRef<string | null>(null);
+
+  /** Unload any playing sound so we don't hit AudioSession conflicts */
+  const unloadSound = async () => {
+    if (soundRef.current) {
+      try {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+      } catch { /* ignore */ }
+      soundRef.current = null;
+    }
+  };
+
+  const clearResult = useCallback(() => {
+    setTranscript('');
+    setSummary('');
+    setIntent('');
+    setError(null);
+    setHasResult(false);
+  }, []);
 
   const startRecording = async () => {
+    // Always clear previous result state first
+    clearResult();
+
     try {
-      setError(null);
-      setTranscript('');
-      setSummary('');
+      // Unload any previous TTS audio before starting mic
+      await unloadSound();
 
-      // Request permissions
-      const permission = await Audio.requestPermissionsAsync();
-      if (permission.status !== 'granted') {
-        setError('Microphone permission not granted');
-        return;
-      }
-
-      // Configure audio session
+      // Switch audio mode to recording
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
 
-      // Start recording (using high quality preset)
+      // Request permissions
+      const permission = await Audio.requestPermissionsAsync();
+      if (permission.status !== 'granted') {
+        setError('Microphone permission denied. Enable in device settings.');
+        showStatus({ type: 'error', label: 'Mic Permission Denied', duration: 4000 });
+        return;
+      }
+
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
-      
+
       recordingRef.current = recording;
       setIsRecording(true);
-    } catch (err) {
-      console.error('Failed to start recording', err);
-      setError('Failed to start recording');
+
+      const sid = showStatus({ type: 'loading', label: 'Listening...', duration: 0 });
+      statusIdRef.current = sid;
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to start recording';
+      setError(msg);
+      showStatus({ type: 'error', label: 'Mic Error', duration: 4000 });
       setIsRecording(false);
     }
   };
@@ -60,54 +98,80 @@ export function useVoiceCommand(apiUrl: string) {
       setIsRecording(false);
       setIsProcessing(true);
 
-      // Stop recording
+      if (statusIdRef.current) {
+        updateStatus(statusIdRef.current, { type: 'loading', label: 'Processing...' });
+      }
+
       await recordingRef.current.stopAndUnloadAsync();
       const uri = recordingRef.current.getURI();
       recordingRef.current = null;
 
-      if (!uri) {
-        throw new Error('No recording URI available');
-      }
+      if (!uri) throw new Error('No recording URI');
 
-      // Prepare file for upload
       const fileExtension = uri.split('.').pop() || 'wav';
       const mimeType = Platform.OS === 'ios' ? 'audio/m4a' : `audio/${fileExtension}`;
 
       const formData = new FormData();
-      // @ts-ignore - React Native FormData accepts an object with uri, name, type
+      // @ts-ignore
       formData.append('audio', {
         uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
         name: `recording.${fileExtension}`,
         type: mimeType,
       });
 
-      // Upload and process
-      const response = await fetch(`${apiUrl}/v1/voice`, {
+      // Fix potential double /v1 in URL
+      const baseUrl = apiUrl.endsWith('/v1') ? apiUrl.slice(0, -3) : apiUrl;
+      const response = await fetch(`${baseUrl}/v1/voice`, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.detail?.message || `Server error: ${response.status}`);
+        throw new Error(
+          errorData?.detail?.message ||
+          errorData?.detail ||
+          `Server error ${response.status}`
+        );
       }
 
       const data: VoiceCommandResponse = await response.json();
-      
+
       setTranscript(data.transcript);
       setSummary(data.summary);
+      setIntent(data.intent);
+      setHasResult(true);
 
-      // Play the response audio if available
+      if (statusIdRef.current) {
+        updateStatus(statusIdRef.current, {
+          type: 'success',
+          label: `Intent: ${data.intent}`,
+          duration: 4000,
+        });
+        statusIdRef.current = null;
+      }
+
+      // Fire callbacks
+      callbacks?.onSuccess?.(data);
+      if (data.intent === 'ingest') {
+        callbacks?.onIngestSuccess?.();
+      }
+
+      // Play TTS response if available
       if (data.audio_b64) {
         await playBase64Audio(data.audio_b64);
       }
 
     } catch (err: any) {
-      console.error('Voice processing failed', err);
-      setError(err.message || 'Failed to process voice command');
+      const msg = err?.message || 'Voice processing failed';
+      setError(msg);
+      setHasResult(true); // show the error in the popup
+
+      if (statusIdRef.current) {
+        updateStatus(statusIdRef.current, { type: 'error', label: 'Voice Failed', duration: 4000 });
+        statusIdRef.current = null;
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -115,28 +179,19 @@ export function useVoiceCommand(apiUrl: string) {
 
   const playBase64Audio = async (base64Audio: string) => {
     try {
-      // Unload previous sound if it exists
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
+      await unloadSound();
 
-      // Configure audio session for playback
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
       });
 
-      // Format base64 URI for playback
       const uri = `data:audio/mp3;base64,${base64Audio}`;
-      
       const { sound } = await Audio.Sound.createAsync({ uri });
       soundRef.current = sound;
-      
       await sound.playAsync();
-    } catch (err) {
-      console.error('Failed to play response audio', err);
-      setError('Failed to play response audio');
+    } catch {
+      // TTS failure is non-fatal — response is still shown as text
     }
   };
 
@@ -146,10 +201,12 @@ export function useVoiceCommand(apiUrl: string) {
       await recordingRef.current.stopAndUnloadAsync();
       recordingRef.current = null;
       setIsRecording(false);
-      setError('Recording cancelled');
-    } catch (err) {
-      console.error('Failed to cancel recording', err);
-    }
+
+      if (statusIdRef.current) {
+        updateStatus(statusIdRef.current, { type: 'warning', label: 'Cancelled', duration: 3000 });
+        statusIdRef.current = null;
+      }
+    } catch { /* ignore */ }
   };
 
   return {
@@ -157,9 +214,12 @@ export function useVoiceCommand(apiUrl: string) {
     isProcessing,
     transcript,
     summary,
+    intent,
     error,
+    hasResult,
     startRecording,
     stopRecordingAndSubmit,
     cancelRecording,
+    clearResult,
   };
 }

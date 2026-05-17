@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Typography } from './Typography';
-import { theme } from '../constants/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 
 interface KpiCardProps {
   number: string | number;
@@ -11,15 +11,19 @@ interface KpiCardProps {
   deltaType?: 'positive' | 'negative';
 }
 
-export function KpiCard({ number, label, color = theme.colors.text, delta, deltaType }: KpiCardProps) {
+export function KpiCard({ number, label, color, delta, deltaType }: KpiCardProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = makeStyles(colors, isDark);
+  const textColor = color || colors.text;
+
   return (
     <View style={styles.card}>
-      <Typography variant="mono" style={[styles.number, { color }]}>{number}</Typography>
+      <Typography variant="mono" style={[styles.number, { color: textColor }]}>{number}</Typography>
       <Typography variant="label" style={styles.label}>{label}</Typography>
       
       {delta && (
         <View style={[styles.deltaBadge, deltaType === 'positive' ? styles.deltaPos : styles.deltaNeg]}>
-          <Typography variant="mono" style={{ fontSize: 9, fontWeight: '700', color: deltaType === 'positive' ? theme.colors.green : theme.colors.crit }}>
+          <Typography variant="mono" style={{ fontSize: 9, fontWeight: '700', color: deltaType === 'positive' ? colors.green : colors.crit }}>
             {delta}
           </Typography>
         </View>
@@ -28,12 +32,12 @@ export function KpiCard({ number, label, color = theme.colors.text, delta, delta
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: theme.colors.surface2,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: colors.border,
     borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 8,
@@ -46,7 +50,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 9,
-    color: theme.colors.textDim,
+    color: colors.textDim,
     marginTop: 4,
   },
   deltaBadge: {
@@ -56,7 +60,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   deltaPos: {
-    backgroundColor: theme.colors.greenDim,
+    backgroundColor: colors.greenDim,
   },
   deltaNeg: {
     backgroundColor: 'rgba(255,71,87,0.1)',

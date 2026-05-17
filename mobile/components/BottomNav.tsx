@@ -1,11 +1,11 @@
 import React from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ClipboardList, FilePlus2, Home, ShieldCheck } from 'lucide-react-native';
+import { ClipboardList, FilePlus2, Home, ShieldCheck, Settings2 } from 'lucide-react-native';
 
-import { theme } from '../constants/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 import { Typography } from './Typography';
 
-type Tab = 'Map' | 'Incidents' | 'Report' | 'Trace';
+type Tab = 'Map' | 'Incidents' | 'Report' | 'Trace' | 'Settings';
 
 interface BottomNavProps {
   activeTab: Tab;
@@ -13,11 +13,15 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ activeTab, onTabSelect }: BottomNavProps) {
+  const { colors, isDark } = useAppTheme();
+  const styles = makeStyles(colors, isDark);
+
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'Map', label: 'Home', icon: Home },
     { id: 'Incidents', label: 'Incidents', icon: ClipboardList },
     { id: 'Report', label: 'Report', icon: FilePlus2 },
-    { id: 'Trace', label: 'Proof', icon: ShieldCheck },
+    { id: 'Trace', label: 'Trace', icon: ShieldCheck },
+    { id: 'Settings', label: 'Settings', icon: Settings2 },
   ];
 
   return (
@@ -25,7 +29,7 @@ export function BottomNav({ activeTab, onTabSelect }: BottomNavProps) {
       <View style={styles.container}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
-          const color = isActive ? theme.colors.green : theme.colors.textMuted;
+          const color = isActive ? colors.green : colors.textMuted;
           const Icon = tab.icon;
 
           return (
@@ -61,7 +65,7 @@ export function BottomNav({ activeTab, onTabSelect }: BottomNavProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   safeArea: {
     position: 'absolute',
     left: 0,
@@ -79,16 +83,16 @@ const styles = StyleSheet.create({
     minHeight: 68,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: 'rgba(8,14,18,0.98)',
+    backgroundColor: isDark ? 'rgba(24,24,27,0.98)' : 'rgba(255,255,255,0.98)',
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: theme.colors.border2,
+    borderColor: colors.border2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.38,
+    shadowOpacity: isDark ? 0.38 : 0.15,
     shadowRadius: 22,
     elevation: 16,
   },
@@ -115,8 +119,8 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: theme.colors.green,
-    shadowColor: theme.colors.green,
+    backgroundColor: colors.green,
+    shadowColor: colors.green,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 4,

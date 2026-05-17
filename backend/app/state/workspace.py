@@ -51,6 +51,24 @@ class WorkspaceStore:
                 return inc
         return None
 
+    def delete_incident(self, incident_id: str) -> bool:
+        before = len(self.incidents)
+        self.incidents = [i for i in self.incidents if i.incidentId != incident_id]
+        return len(self.incidents) < before
+
+    def patch_incident(self, incident_id: str, patch: dict) -> Incident | None:
+        """Apply a partial update dict to an existing incident."""
+        from datetime import datetime, timezone
+        inc = self.get_incident(incident_id)
+        if inc is None:
+            return None
+        data = inc.model_dump()
+        data.update({k: v for k, v in patch.items() if v is not None})
+        data["updatedAt"] = datetime.now(timezone.utc).isoformat()
+        updated = Incident(**data)
+        self.upsert_incident(updated)
+        return updated
+
     def save_plan(self, plan: PlanSummary) -> None:
         self.plans[plan.planId] = plan
 
