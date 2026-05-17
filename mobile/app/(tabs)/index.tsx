@@ -1,11 +1,13 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Animated, PanResponder, Platform } from 'react-native';
+import MapView from 'react-native-maps';
 import { TopBar } from '../../components/TopBar';
 import { Typography } from '../../components/Typography';
 import { SeverityBadge } from '../../components/Badges';
 import { Play, MapPin, Activity, Clock, Navigation, RotateCcw } from 'lucide-react-native';
 import { api } from '@/src/lib/api';
 import { Map } from '../../components/Map';
+import { IncidentCallout } from '../../components/IncidentCallout';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { usePlanContext } from '../../contexts/PlanContext';
@@ -27,6 +29,12 @@ export default function MapDashboardScreen() {
   const styles = makeStyles(colors, isDark);
   const { planId, setPlanId } = usePlanContext();
   const { showStatus } = useStatus();
+
+  // Map ref for fitToCoordinates
+  const mapRef = useRef<MapView>(null);
+
+  // Selected incident for callout
+  const [selectedIncident, setSelectedIncident] = useState<any | null>(null);
   
   const [activeFilter, setActiveFilter] = useState('All');
   const [loading, setLoading] = useState(false);
@@ -97,14 +105,27 @@ export default function MapDashboardScreen() {
       const plan = await api.plan({ planMode: 'full' });
       const id = String(plan.planId);
       setPlanId(id);
-      fetchIncidents();
+      await fetchIncidents();
       showStatus({ id: sid, type: 'success', label: 'Plan Deployed', duration: 4000 });
+
+      // Animate map to fit all incident markers
+      setTimeout(() => {
+        const coords = incidents
+          .filter(i => i.coordinates?.lat && i.coordinates?.lng)
+          .map(i => ({ latitude: i.coordinates.lat, longitude: i.coordinates.lng }));
+        if (coords.length > 0 && mapRef.current) {
+          mapRef.current.fitToCoordinates(coords, {
+            edgePadding: { top: 80, right: 40, bottom: 220, left: 40 },
+            animated: true,
+          });
+        }
+      }, 600);
     } catch (e) {
       showStatus({ id: sid, type: 'error', label: 'Plan Failed', duration: 4000 });
     } finally {
       setLoading(false);
     }
-  }, [fetchIncidents]);
+  }, [fetchIncidents, incidents]);
 
   const filteredIncidents = incidents.filter(inc => {
     if (activeFilter === 'All') return true;
@@ -152,8 +173,22 @@ export default function MapDashboardScreen() {
     <View style={styles.container}>
       {/* Background Map spanning full height */}
       <View style={StyleSheet.absoluteFill}>
-        <Map mapStyle={isDark ? darkMapStyle : lightMapStyle} incidents={filteredIncidents} />
+        <Map
+          mapStyle={isDark ? darkMapStyle : lightMapStyle}
+          incidents={filteredIncidents}
+          mapRef={mapRef}
+          onIncidentPress={setSelectedIncident}
+          selectedIncidentId={selectedIncident?.incidentId}
+        />
       </View>
+
+      {/* Centered Modal Incident Callout */}
+      {selectedIncident && (
+        <IncidentCallout
+          incident={selectedIncident}
+          onClose={() => setSelectedIncident(null)}
+        />
+      )}
 
       {/* TopBar overlapping Map */}
       <View style={styles.topBarWrapper}>

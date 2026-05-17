@@ -1,16 +1,17 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import { StyleSheet, View, Text } from 'react-native';
+import MapView, { Marker, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useRouter } from 'expo-router';
+import { useStatus } from '../contexts/StatusContext';
 
-export function Map({ mapStyle, incidents = [] }: { mapStyle: any, incidents?: any[] }) {
+export function Map({ mapStyle, incidents = [], mapRef, onIncidentPress }: { mapStyle: any, incidents?: any[], mapRef?: any, onIncidentPress?: (inc: any) => void }) {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const styles = makeStyles(colors, isDark);
 
   const getMarkerColor = (severity: string) => {
-    switch (severity) {
+    switch ((severity || '').toUpperCase()) {
       case 'CRITICAL': return colors.crit;
       case 'HIGH': return colors.high;
       case 'LOW': return colors.low;
@@ -20,6 +21,7 @@ export function Map({ mapStyle, incidents = [] }: { mapStyle: any, incidents?: a
 
   return (
     <MapView
+      ref={mapRef}
       provider={PROVIDER_DEFAULT}
       style={StyleSheet.absoluteFillObject}
       customMapStyle={mapStyle}
@@ -33,12 +35,14 @@ export function Map({ mapStyle, incidents = [] }: { mapStyle: any, incidents?: a
       {incidents.map((inc, i) => {
         if (!inc.coordinates || !inc.coordinates.lat || !inc.coordinates.lng) return null;
         const color = getMarkerColor(inc.severity);
+        const title = inc.title || inc.rawDescription || 'Incident reported';
         return (
           <Marker 
-            key={inc.incidentId || i} 
+            key={inc.incidentId || i}
             coordinate={{ latitude: inc.coordinates.lat, longitude: inc.coordinates.lng }}
-            onPress={() => inc.incidentId && router.push(`/incident/${inc.incidentId}`)}
+            onPress={() => onIncidentPress && onIncidentPress(inc)}
           >
+            {/* The original simple circle marker */}
             <View style={[styles.markerRing, { borderColor: color, backgroundColor: `${color}1A` }]}>
               <View style={[styles.markerDot, { backgroundColor: color }]} />
             </View>
@@ -55,7 +59,6 @@ const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    backgroundColor: 'rgba(255,71,87,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -64,4 +67,5 @@ const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
+  
 });
