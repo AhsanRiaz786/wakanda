@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Tabs, useRouter, useSegments } from 'expo-router';
 import { BottomNav } from '../../components/BottomNav';
 import { VoiceCommandButton } from '../../components/VoiceCommandButton';
+import { api } from '@/src/lib/api';
+import { useStatus } from '../../contexts/StatusContext';
 
 export default function TabLayout() {
   const router = useRouter();
   const segments = useSegments();
+  const { showStatus } = useStatus();
 
   let activeTab: 'Map' | 'Incidents' | 'Report' | 'Trace' | 'Settings' = 'Map';
   if (segments.includes('incidents')) activeTab = 'Incidents';
@@ -13,12 +16,24 @@ export default function TabLayout() {
   else if (segments.includes('trace')) activeTab = 'Trace';
   else if (segments.includes('settings')) activeTab = 'Settings';
 
+  /**
+   * After a voice `ingest` command succeeds, navigate to Incidents so the
+   * user can immediately see the new entry.
+   */
+  const handleIngestSuccess = useCallback(() => {
+    router.push('/incidents');
+    showStatus({ type: 'success', label: 'Incident logged — view feed', duration: 3000 });
+  }, []);
+
   return (
     <Tabs
       screenOptions={{ headerShown: false }}
       tabBar={() => (
         <>
-          <VoiceCommandButton apiUrl={process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000/v1'} />
+          <VoiceCommandButton
+            apiUrl={process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000/v1'}
+            callbacks={{ onIngestSuccess: handleIngestSuccess }}
+          />
           <BottomNav
             activeTab={activeTab}
             onTabSelect={(tab) => {

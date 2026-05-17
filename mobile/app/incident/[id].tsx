@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View, Pressable } from 'react-native';
+import {
+  ActivityIndicator, ScrollView, StyleSheet, View, Pressable,
+  Modal, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform,
+} from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { MapPin, Clock, AlertTriangle, CheckCircle2, Zap, Bell, Users, Navigation } from 'lucide-react-native';
+import {
+  MapPin, Clock, AlertTriangle, CheckCircle2, Zap, Bell,
+  Users, Navigation, Edit3, Trash2,
+} from 'lucide-react-native';
 
 import { api } from '@/src/lib/api';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -9,6 +15,7 @@ import { TopBar } from '../../components/TopBar';
 import { Typography } from '../../components/Typography';
 import { TimelineStepper } from '../../components/TimelineStepper';
 import { NotificationPanel } from '../../components/NotificationPanel';
+import { useStatus } from '../../contexts/StatusContext';
 
 const STATUS_STEPS = ['Reported', 'Triaged', 'Assigned', 'In Progress', 'Resolved'];
 
@@ -17,10 +24,69 @@ export default function IncidentDetailScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const styles = makeStyles(colors, isDark);
-  
+  const { showStatus } = useStatus();
+
   const [incident, setIncident] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notifVisible, setNotifVisible] = useState(false);
+
+  // Edit state
+  const [editVisible, setEditVisible] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editSeverity, setEditSeverity] = useState('');
+  const [editStatus, setEditStatus] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+
+  // Delete state
+  const [deleteVisible, setDeleteVisible] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const openEdit = () => {
+    if (!incident) return;
+    setEditTitle(String(incident.title || ''));
+    setEditDesc(String(incident.description || ''));
+    setEditSeverity(String(incident.severity || 'low'));
+    setEditStatus(String(incident.status || 'reported'));
+    setEditVisible(true);
+  };
+
+  const saveEdit = async () => {
+    if (!id) return;
+    setEditSaving(true);
+    const sid = showStatus({ type: 'loading', label: 'Saving...', duration: 0 });
+    try {
+      const updated = await api.updateIncident(id as string, {
+        title: editTitle.trim() || undefined,
+        description: editDesc.trim() || undefined,
+        severity: editSeverity || undefined,
+        status: editStatus || undefined,
+      });
+      setIncident(updated);
+      setEditVisible(false);
+      showStatus({ id: sid, type: 'success', label: 'Incident Updated', duration: 3000 });
+    } catch (e) {
+      showStatus({ id: sid, type: 'error', label: 'Update Failed', duration: 4000 });
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!id) return;
+    setDeleteLoading(true);
+    const sid = showStatus({ type: 'loading', label: 'Deleting...', duration: 0 });
+    try {
+      await api.deleteIncident(id as string);
+      setDeleteVisible(false);
+      showStatus({ id: sid, type: 'success', label: 'Incident Deleted', duration: 3000 });
+      router.back();
+    } catch (e) {
+      showStatus({ id: sid, type: 'error', label: 'Delete Failed', duration: 4000 });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -54,6 +120,7 @@ export default function IncidentDetailScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
+
       <TopBar
         title={(id as string)?.split('-')[0] || 'Detail'}
         leftIcon="back"
@@ -62,6 +129,22 @@ export default function IncidentDetailScreen() {
         onRightPress={() => setNotifVisible(true)}
       />
       <NotificationPanel visible={notifVisible} onClose={() => setNotifVisible(false)} />
+
+      {/* Edit + Delete action bar */}
+      <View style={styles.actionBar}>
+        <TouchableOpacity style={styles.editBtn} onPress={openEdit} activeOpacity={0.8}>
+          <Edit3 size={15} color={colors.green} />
+          <Typography variant="body" color={colors.green} style={{ fontSize: 13, fontWeight: '600' }}>
+            Edit
+          </Typography>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteBtn} onPress={() => setDeleteVisible(true)} activeOpacity={0.8}>
+          <Trash2 size={15} color={colors.crit} />
+          <Typography variant="body" color={colors.crit} style={{ fontSize: 13, fontWeight: '600' }}>
+            Delete
+          </Typography>
+        </TouchableOpacity>
+      </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         {error && <Typography variant="body" color={colors.crit} style={{ padding: 16 }}>{error}</Typography>}
@@ -231,6 +314,132 @@ export default function IncidentDetailScreen() {
         </View>
 
       </ScrollView>
+
+      {/* ── Edit Bottom Sheet ──────────────────────────────── */}
+      <Modal
+        visible={editVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setEditVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalBackdrop}
+        >
+          <Pressable style={{ flex: 1 }} onPress={() => setEditVisible(false)} />
+          <View style={styles.editSheet}>
+            <View style={styles.sheetHandle} />
+            <Typography variant="heading" style={styles.sheetTitle}>Edit Incident</Typography>
+
+            <Typography variant="label" color={colors.textDim} style={styles.fieldLabel}>TITLE</Typography>
+            <TextInput
+              style={styles.fieldInput}
+              value={editTitle}
+              onChangeText={setEditTitle}
+              placeholder="Incident title..."
+              placeholderTextColor={colors.textDim}
+            />
+
+            <Typography variant="label" color={colors.textDim} style={styles.fieldLabel}>DESCRIPTION</Typography>
+            <TextInput
+              style={[styles.fieldInput, { height: 90, textAlignVertical: 'top' }]}
+              value={editDesc}
+              onChangeText={setEditDesc}
+              placeholder="Description..."
+              placeholderTextColor={colors.textDim}
+              multiline
+            />
+
+            <Typography variant="label" color={colors.textDim} style={styles.fieldLabel}>SEVERITY</Typography>
+            <View style={styles.chipRow}>
+              {['low', 'medium', 'high', 'critical'].map(s => (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.sevChip, editSeverity === s && styles.sevChipActive]}
+                  onPress={() => setEditSeverity(s)}
+                >
+                  <Typography variant="mono" style={{ fontSize: 11, fontWeight: '700' }}
+                    color={editSeverity === s ? colors.green : colors.textDim}>
+                    {s.toUpperCase()}
+                  </Typography>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Typography variant="label" color={colors.textDim} style={styles.fieldLabel}>STATUS</Typography>
+            <View style={styles.chipRow}>
+              {['reported', 'triaged', 'assigned', 'in_progress', 'resolved'].map(s => (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.sevChip, editStatus === s && styles.sevChipActive]}
+                  onPress={() => setEditStatus(s)}
+                >
+                  <Typography variant="mono" style={{ fontSize: 10, fontWeight: '700' }}
+                    color={editStatus === s ? colors.green : colors.textDim}>
+                    {s.replace('_', ' ').toUpperCase()}
+                  </Typography>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.saveBtn, editSaving && { opacity: 0.6 }]}
+              onPress={saveEdit}
+              disabled={editSaving}
+              activeOpacity={0.85}
+            >
+              {editSaving
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Typography variant="heading" color="#fff" style={{ fontSize: 15 }}>Save Changes</Typography>
+              }
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Delete Confirmation ────────────────────────────── */}
+      <Modal
+        visible={deleteVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setDeleteVisible(false)}
+      >
+        <View style={styles.deleteBackdrop}>
+          <View style={styles.deleteCard}>
+            <View style={styles.deleteIconBox}>
+              <Trash2 size={28} color={colors.crit} />
+            </View>
+            <Typography variant="heading" style={{ fontSize: 18, marginTop: 16, textAlign: 'center' }}>
+              Delete Incident?
+            </Typography>
+            <Typography variant="body" color={colors.textMuted}
+              style={{ fontSize: 13, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
+              This will permanently remove the incident from the system. This action cannot be undone.
+            </Typography>
+            <View style={styles.deleteActions}>
+              <TouchableOpacity
+                style={styles.cancelActionBtn}
+                onPress={() => setDeleteVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Typography variant="body" color={colors.text} style={{ fontWeight: '600' }}>Cancel</Typography>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmDeleteBtn, deleteLoading && { opacity: 0.6 }]}
+                onPress={confirmDelete}
+                disabled={deleteLoading}
+                activeOpacity={0.85}
+              >
+                {deleteLoading
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Typography variant="heading" color="#fff" style={{ fontSize: 14 }}>Delete</Typography>
+                }
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -422,5 +631,176 @@ const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     alignSelf: 'flex-start',
+  },
+  // ── Action Bar ───────────────────────────────────────────
+  actionBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  editBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 11,
+    borderRadius: 12,
+    backgroundColor: colors.greenDim,
+    borderWidth: 1,
+    borderColor: colors.greenGlow,
+  },
+  deleteBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 11,
+    borderRadius: 12,
+    backgroundColor: isDark ? 'rgba(239,68,68,0.12)' : '#FEF2F2',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(239,68,68,0.25)' : '#FECACA',
+  },
+  // ── Edit Sheet ───────────────────────────────────────────
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  editSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.border2,
+    padding: 24,
+    paddingBottom: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: isDark ? 0.4 : 0.12,
+    shadowRadius: 16,
+    elevation: 20,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border2,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    marginBottom: 20,
+  },
+  fieldLabel: {
+    fontSize: 10,
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  fieldInput: {
+    backgroundColor: colors.surface2,
+    borderWidth: 1,
+    borderColor: colors.border2,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: colors.text,
+    fontSize: 14,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  sevChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border2,
+    backgroundColor: colors.surface2,
+  },
+  sevChipActive: {
+    backgroundColor: colors.greenDim,
+    borderColor: colors.greenGlow,
+  },
+  saveBtn: {
+    backgroundColor: colors.green,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 24,
+    shadowColor: colors.green,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  // ── Delete Modal ─────────────────────────────────────────
+  deleteBackdrop: {
+    flex: 1,
+    backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  deleteCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border2,
+    padding: 28,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: isDark ? 0.5 : 0.2,
+    shadowRadius: 20,
+    elevation: 16,
+  },
+  deleteIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : '#FEF2F2',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(239,68,68,0.3)' : '#FECACA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+    width: '100%',
+  },
+  cancelActionBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    backgroundColor: colors.surface2,
+    borderWidth: 1,
+    borderColor: colors.border2,
+  },
+  confirmDeleteBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    backgroundColor: colors.crit,
+    shadowColor: colors.crit,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
   },
 });

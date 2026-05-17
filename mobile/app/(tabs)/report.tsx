@@ -19,10 +19,12 @@ import { useAppTheme } from '../../hooks/useAppTheme';
 import { TopBar } from '../../components/TopBar';
 import { Typography } from '../../components/Typography';
 import { NotificationPanel } from '../../components/NotificationPanel';
+import { useStatus } from '../../contexts/StatusContext';
 
 export default function ReportIncidentScreen() {
   const { colors, isDark } = useAppTheme();
   const styles = makeStyles(colors, isDark);
+  const { showStatus } = useStatus();
 
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -80,6 +82,7 @@ export default function ReportIncidentScreen() {
     setLoading(true);
     setError(null);
     setMessage(null);
+    const sid = showStatus({ type: 'loading', label: 'Submitting Report...', duration: 0 });
     try {
       const body: Record<string, unknown> = {
         rawDescription: description,
@@ -87,8 +90,6 @@ export default function ReportIncidentScreen() {
         rawCoordinates: { lat: 33.7205, lng: 73.0478 },
         rawAddress: 'Sector G-11, Islamabad',
       };
-      // If image was selected, include its URI as imageUrl
-      // (backend stores it as metadata; full upload would need multipart)
       if (imageUri) {
         body.imageUrl = imageUri;
         body.sourceMetadata = { hasPhoto: true, photoUri: imageUri };
@@ -97,8 +98,10 @@ export default function ReportIncidentScreen() {
       setMessage(`Incident logged ✓ ID: ${incident.incidentId}`);
       setDescription('');
       setImageUri(null);
+      showStatus({ id: sid, type: 'success', label: 'Report Logged', duration: 4000 });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Submit failed');
+      showStatus({ id: sid, type: 'error', label: 'Submit Failed', duration: 4000 });
     } finally {
       setLoading(false);
     }

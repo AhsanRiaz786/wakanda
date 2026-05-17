@@ -19,6 +19,7 @@ import { SeverityBadge } from '../../components/Badges';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { api } from '@/src/lib/api';
 import { NotificationPanel } from '../../components/NotificationPanel';
+import { useStatus } from '../../contexts/StatusContext';
 
 type IncidentRow = {
   incidentId: string;
@@ -50,6 +51,7 @@ const SEV_RANK: Record<string, number> = { critical: 4, high: 3, medium: 2, low:
 export default function IncidentsScreen() {
   const { colors, isDark } = useAppTheme();
   const styles = makeStyles(colors, isDark);
+  const { showStatus } = useStatus();
 
   const [items, setItems] = useState<IncidentRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,11 +64,13 @@ export default function IncidentsScreen() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    const sid = showStatus({ type: 'loading', label: 'Loading Feed...', duration: 0 });
     try {
       const data = await api.listIncidents();
       setItems((data.incidents as IncidentRow[]) ?? []);
+      showStatus({ id: sid, type: 'connected', label: 'Feed Updated', duration: 2500 });
     } catch {
-      // silent fail — show empty state
+      showStatus({ id: sid, type: 'error', label: 'Feed Unavailable', duration: 4000 });
     } finally {
       setLoading(false);
     }

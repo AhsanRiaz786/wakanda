@@ -22,6 +22,15 @@ export const api = {
       `/incidents${status ? `?status=${encodeURIComponent(status)}` : ''}`,
     ),
   getIncident: (id: string) => request<Record<string, unknown>>(`/incidents/${id}`),
+  updateIncident: (id: string, patch: Record<string, unknown>) =>
+    request<Record<string, unknown>>(`/incidents/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+  deleteIncident: (id: string) =>
+    request<{ deleted: boolean; incidentId: string }>(`/incidents/${id}`, {
+      method: 'DELETE',
+    }),
   ingest: (body: Record<string, unknown>) =>
     request<Record<string, unknown>>('/ingest', { method: 'POST', body: JSON.stringify(body) }),
   plan: (body: Record<string, unknown> = { planMode: 'full' }) =>

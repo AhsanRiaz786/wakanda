@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { usePlanContext } from '../../contexts/PlanContext';
 import { NotificationPanel } from '../../components/NotificationPanel';
+import { useStatus } from '../../contexts/StatusContext';
 
 const { height } = Dimensions.get('window');
 
@@ -25,6 +26,7 @@ export default function MapDashboardScreen() {
   const { colors, isDark } = useAppTheme();
   const styles = makeStyles(colors, isDark);
   const { planId, setPlanId } = usePlanContext();
+  const { showStatus } = useStatus();
   
   const [activeFilter, setActiveFilter] = useState('All');
   const [loading, setLoading] = useState(false);
@@ -80,7 +82,7 @@ export default function MapDashboardScreen() {
       const data = await api.listIncidents();
       setIncidents(data.incidents || []);
     } catch (e) {
-      console.error('Failed to fetch incidents', e);
+      showStatus({ type: 'warning', label: 'Feed Unavailable', duration: 3000 });
     }
   }, []);
 
@@ -90,14 +92,15 @@ export default function MapDashboardScreen() {
 
   const runPlan = useCallback(async () => {
     setLoading(true);
+    const sid = showStatus({ type: 'loading', label: 'Running AI Plan...', duration: 0 });
     try {
       const plan = await api.plan({ planMode: 'full' });
       const id = String(plan.planId);
       setPlanId(id);
-      // Refresh incidents after plan runs
       fetchIncidents();
+      showStatus({ id: sid, type: 'success', label: 'Plan Deployed', duration: 4000 });
     } catch (e) {
-      console.error('Plan failed', e);
+      showStatus({ id: sid, type: 'error', label: 'Plan Failed', duration: 4000 });
     } finally {
       setLoading(false);
     }

@@ -10,11 +10,13 @@ import { KpiCard } from '../../components/KpiCard';
 import { TraceNode, TraceNodeType, TraceStatus } from '../../components/TraceNode';
 import { usePlanContext } from '../../contexts/PlanContext';
 import { NotificationPanel } from '../../components/NotificationPanel';
+import { useStatus } from '../../contexts/StatusContext';
 
 export default function AgentTraceScreen() {
   const { colors, isDark } = useAppTheme();
   const styles = makeStyles(colors, isDark);
   const { planId, setPlanId } = usePlanContext();
+  const { showStatus } = useStatus();
 
   const [trace, setTrace] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +45,7 @@ export default function AgentTraceScreen() {
 
   const runSimulation = async () => {
     let pid = planId;
+    const sid = showStatus({ type: 'loading', label: 'Preparing Plan...', duration: 0 });
 
     // If no plan has been run yet, run one first
     if (!pid) {
@@ -51,22 +54,28 @@ export default function AgentTraceScreen() {
         const plan = await api.plan({ planMode: 'full' });
         pid = String(plan.planId);
         setPlanId(pid);
+        showStatus({ id: sid, type: 'loading', label: 'Running Simulation...' });
       } catch (e) {
         Alert.alert('Plan Failed', 'Could not create a plan. Is the backend running?');
+        showStatus({ id: sid, type: 'error', label: 'Plan Failed', duration: 4000 });
         setSimLoading(false);
         return;
       }
+    } else {
+      showStatus({ id: sid, type: 'loading', label: 'Running Simulation...' });
     }
 
     setSimLoading(true);
     try {
       await api.simulate(pid);
       setSimDone(true);
+      showStatus({ id: sid, type: 'success', label: 'Simulation Complete', duration: 4000 });
       // Reload trace to show simulation results
       await loadTrace();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Simulation failed';
       Alert.alert('Simulation Failed', msg);
+      showStatus({ id: sid, type: 'error', label: 'Simulation Failed', duration: 4000 });
     } finally {
       setSimLoading(false);
     }
