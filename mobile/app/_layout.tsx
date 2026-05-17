@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { StatusBar } from 'react-native';
 import 'react-native-reanimated';
 import { ThemeProvider, useThemeContext } from '../contexts/ThemeContext';
+import { PlanProvider } from '../contexts/PlanContext';
 import { darkColors, lightColors } from '../constants/theme';
 
 export {
@@ -40,7 +41,9 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <RootLayoutNav />
+      <PlanProvider>
+        <RootLayoutNav />
+      </PlanProvider>
     </ThemeProvider>
   );
 }

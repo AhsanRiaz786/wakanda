@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { MapPin, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react-native';
+import { MapPin, Clock, AlertTriangle, CheckCircle2, Zap, Bell, Users, Navigation } from 'lucide-react-native';
 
 import { api } from '@/src/lib/api';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { TopBar } from '../../components/TopBar';
 import { Typography } from '../../components/Typography';
 import { TimelineStepper } from '../../components/TimelineStepper';
+import { NotificationPanel } from '../../components/NotificationPanel';
 
 const STATUS_STEPS = ['Reported', 'Triaged', 'Assigned', 'In Progress', 'Resolved'];
 
@@ -19,6 +20,7 @@ export default function IncidentDetailScreen() {
   
   const [incident, setIncident] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notifVisible, setNotifVisible] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -52,11 +54,14 @@ export default function IncidentDetailScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <TopBar 
-        title={(id as string) || 'Detail'} 
-        leftIcon="back" 
-        onLeftPress={() => router.back()} 
+      <TopBar
+        title={(id as string)?.split('-')[0] || 'Detail'}
+        leftIcon="back"
+        onLeftPress={() => router.back()}
+        rightIcon="bell"
+        onRightPress={() => setNotifVisible(true)}
       />
+      <NotificationPanel visible={notifVisible} onClose={() => setNotifVisible(false)} />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         {error && <Typography variant="body" color={colors.crit} style={{ padding: 16 }}>{error}</Typography>}
@@ -74,18 +79,30 @@ export default function IncidentDetailScreen() {
           <View style={styles.metaRow}>
             <View style={styles.metaTag}>
               <MapPin size={14} color={colors.textDim} strokeWidth={2} />
-              <Typography variant="body" color={colors.textMuted} style={{ fontSize: 12 }}>Market Quarter (D-02)</Typography>
+              <Typography variant="body" color={colors.textMuted} style={{ fontSize: 12 }}>
+                {(incident?.coordinates as any)?.lat
+                  ? `${(incident.coordinates as any).lat.toFixed(4)}°N, ${(incident.coordinates as any).lng.toFixed(4)}°E`
+                  : 'Location unspecified'}
+              </Typography>
             </View>
             <View style={styles.metaTag}>
               <Clock size={14} color={colors.textDim} strokeWidth={2} />
-              <Typography variant="body" color={colors.textMuted} style={{ fontSize: 12 }}>2 min ago</Typography>
+              <Typography variant="body" color={colors.textMuted} style={{ fontSize: 12 }}>
+                {incident?.createdAt
+                  ? new Date(String(incident.createdAt)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : 'Unknown time'}
+              </Typography>
             </View>
           </View>
         </View>
 
-        {/* Stepper */}
+        {/* Stepper — pass rawStatus for case-insensitive matching */}
         <View style={styles.sectionContainer}>
-          <TimelineStepper steps={STATUS_STEPS} currentStepIndex={stepIndex >= 0 ? stepIndex : 0} />
+          <TimelineStepper
+            steps={STATUS_STEPS}
+            currentStepIndex={0}
+            rawStatus={status}
+          />
         </View>
 
         {/* Classification */}
@@ -98,15 +115,23 @@ export default function IncidentDetailScreen() {
             </View>
             <View style={styles.infoCell}>
               <Typography variant="mono" style={styles.infoCellK}>Source</Typography>
-              <Typography variant="body" style={styles.infoCellV}>Live Feed</Typography>
+              <Typography variant="body" style={styles.infoCellV}>
+                {String(incident?.sourceLabel || incident?.sourceType || 'Live Feed').replace('_', ' ')}
+              </Typography>
             </View>
             <View style={styles.infoCell}>
               <Typography variant="mono" style={styles.infoCellK}>District</Typography>
-              <Typography variant="body" style={styles.infoCellV}>D-02</Typography>
+              <Typography variant="body" style={styles.infoCellV}>
+                {(incident?.coordinates as any)?.lat
+                  ? `${(incident.coordinates as any).lat.toFixed(2)}°N`
+                  : 'Islamabad'}
+              </Typography>
             </View>
             <View style={styles.infoCell}>
               <Typography variant="mono" style={styles.infoCellK}>Confidence</Typography>
-              <Typography variant="body" style={[styles.infoCellV, { color: colors.green }]}>92%</Typography>
+              <Typography variant="body" style={[styles.infoCellV, { color: colors.green }]}>
+                {incident?.urgencyScore ? `${incident.urgencyScore}/10` : 'N/A'}
+              </Typography>
             </View>
           </View>
         </View>
@@ -153,31 +178,55 @@ export default function IncidentDetailScreen() {
           </View>
         )}
 
-        {/* Action Chain */}
+        {/* Action Chain — dynamic from API */}
         <View style={[styles.sectionContainer, { borderBottomWidth: 0 }]}>
           <Typography variant="label" color={colors.textDim} style={styles.dsecLabel}>Agent Actions</Typography>
           <View style={styles.actionChain}>
-            <View style={styles.acStep}>
-              <View style={[styles.acNum, styles.acDone]}><CheckCircle2 size={14} color={colors.green} /></View>
-              <View style={styles.acBody}>
-                <Typography variant="body" style={styles.acName}>Classify & Triage</Typography>
-                <Typography variant="body" style={styles.acDesc}>Severity confirmed · {severity}</Typography>
-              </View>
-            </View>
-            <View style={styles.acStep}>
-              <View style={[styles.acNum, styles.acAct]}><Typography variant="mono" color={colors.high} style={{ fontSize: 10, fontWeight: '700' }}>2</Typography></View>
-              <View style={styles.acBody}>
-                <Typography variant="body" style={styles.acName}>Notify Departments</Typography>
-                <Typography variant="body" style={styles.acDesc}>Generating dispatch plans</Typography>
-              </View>
-            </View>
-            <View style={styles.acStep}>
-              <View style={styles.acNum}><Typography variant="mono" color={colors.textMuted} style={{ fontSize: 10, fontWeight: '700' }}>3</Typography></View>
-              <View style={styles.acBody}>
-                <Typography variant="body" style={styles.acName}>Deploy Crews</Typography>
-                <Typography variant="body" style={styles.acDesc}>Pending department response</Typography>
-              </View>
-            </View>
+            {(incident?.actionChain as any[] || []).length > 0
+              ? (incident!.actionChain as any[]).map((step: any, idx: number) => {
+                  const chainArr = incident!.actionChain as any[];
+                  const isLast = idx === chainArr.length - 1;
+                  const isDoneStep = ['completed', 'done', 'success'].includes((step.status || '').toLowerCase());
+                  const isActiveStep = !isDoneStep && idx === 0;
+                  const typeStr = (step.type || step.stepType || '').toLowerCase();
+                  let StepIcon: any = CheckCircle2;
+                  if (typeStr.includes('notify') || typeStr.includes('department')) StepIcon = Bell;
+                  else if (typeStr.includes('dispatch') || typeStr.includes('crew')) StepIcon = Users;
+                  else if (typeStr.includes('road') || typeStr.includes('navigate')) StepIcon = Navigation;
+                  else if (typeStr.includes('validate')) StepIcon = Zap;
+                  return (
+                    <View key={idx} style={[styles.acStep, !isLast && styles.acStepBorder]}>
+                      <View style={[styles.acNum, isDoneStep && styles.acDone, isActiveStep && styles.acAct]}>
+                        {isDoneStep
+                          ? <CheckCircle2 size={14} color={colors.green} />
+                          : <StepIcon size={14} color={isActiveStep ? colors.high : colors.textMuted} />}
+                      </View>
+                      <View style={styles.acBody}>
+                        <Typography variant="body" style={styles.acName}>
+                          {step.name || step.action || `Step ${idx + 1}`}
+                        </Typography>
+                        {step.description && (
+                          <Typography variant="body" style={styles.acDesc}>{step.description}</Typography>
+                        )}
+                        {step.department && (
+                          <View style={styles.acDeptPill}>
+                            <Typography variant="mono" color={colors.low} style={{ fontSize: 10 }}>
+                              {step.department}
+                            </Typography>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })
+              : (
+                <View style={{ padding: 16, alignItems: 'center' }}>
+                  <Typography variant="body" color={colors.textMuted} style={{ fontSize: 13, textAlign: 'center' }}>
+                    {'No agent actions yet.\nRun the Autonomous Plan from the Map Dashboard.'}
+                  </Typography>
+                </View>
+              )
+            }
           </View>
         </View>
 
@@ -359,5 +408,19 @@ const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontSize: 12,
     color: colors.textMuted,
     marginTop: 4,
+  },
+  acStepBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  acDeptPill: {
+    marginTop: 6,
+    backgroundColor: 'rgba(76,201,240,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(76,201,240,0.2)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    alignSelf: 'flex-start',
   },
 });

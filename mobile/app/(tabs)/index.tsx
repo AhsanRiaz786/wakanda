@@ -3,11 +3,13 @@ import { StyleSheet, View, ScrollView, TouchableOpacity, Dimensions, ActivityInd
 import { TopBar } from '../../components/TopBar';
 import { Typography } from '../../components/Typography';
 import { SeverityBadge } from '../../components/Badges';
-import { Play, MapPin, Activity, Clock, Navigation } from 'lucide-react-native';
+import { Play, MapPin, Activity, Clock, Navigation, RotateCcw } from 'lucide-react-native';
 import { api } from '@/src/lib/api';
 import { Map } from '../../components/Map';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '../../hooks/useAppTheme';
+import { usePlanContext } from '../../contexts/PlanContext';
+import { NotificationPanel } from '../../components/NotificationPanel';
 
 const { height } = Dimensions.get('window');
 
@@ -22,11 +24,11 @@ export default function MapDashboardScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const styles = makeStyles(colors, isDark);
+  const { planId, setPlanId } = usePlanContext();
   
   const [activeFilter, setActiveFilter] = useState('All');
   const [loading, setLoading] = useState(false);
-  const [planId, setPlanId] = useState<string | null>(null);
-
+  const [notifVisible, setNotifVisible] = useState(false);
   const [incidents, setIncidents] = useState<any[]>([]);
 
   // Animation values for bottom sheet
@@ -90,13 +92,16 @@ export default function MapDashboardScreen() {
     setLoading(true);
     try {
       const plan = await api.plan({ planMode: 'full' });
-      setPlanId(String(plan.planId));
+      const id = String(plan.planId);
+      setPlanId(id);
+      // Refresh incidents after plan runs
+      fetchIncidents();
     } catch (e) {
       console.error('Plan failed', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchIncidents]);
 
   const filteredIncidents = incidents.filter(inc => {
     if (activeFilter === 'All') return true;
@@ -155,8 +160,12 @@ export default function MapDashboardScreen() {
           leftIcon="pulse" 
           rightIcon="bell" 
           transparent
+          onRightPress={() => setNotifVisible(true)}
         />
       </View>
+
+      {/* Notification Panel */}
+      <NotificationPanel visible={notifVisible} onClose={() => setNotifVisible(false)} />
 
       {/* Draggable Bottom Sheet Overlay */}
       <Animated.View style={[styles.sheetWrapper, { transform: [{ translateY }] }]}>
@@ -185,23 +194,33 @@ export default function MapDashboardScreen() {
           
           <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetContent} showsVerticalScrollIndicator={false}>
             
-            {/* Action Button at top of sheet */}
-            <TouchableOpacity 
-              style={[styles.runBtn, planId ? styles.runBtnSuccess : null]} 
-              onPress={runPlan} 
-              disabled={loading || !!planId}
-            >
-              {loading ? (
-                <ActivityIndicator color={isDark ? '#000' : '#FFF'} />
-              ) : (
-                <>
-                  <Play size={18} color={isDark ? '#000' : '#FFF'} fill={isDark ? '#000' : '#FFF'} />
-                  <Typography variant="heading" style={{ fontSize: 15, letterSpacing: 0.5, color: planId ? colors.greenDeep : (isDark ? '#000' : '#FFF') }}>
-                    {planId ? 'Agent Plan Deployed ✓' : 'Run Autonomous Plan'}
-                  </Typography>
-                </>
+            {/* Action Button + Reset */}
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+              <TouchableOpacity 
+                style={[styles.runBtn, { flex: 1 }, planId ? styles.runBtnSuccess : null]} 
+                onPress={runPlan} 
+                disabled={loading || !!planId}
+              >
+                {loading ? (
+                  <ActivityIndicator color={isDark ? '#000' : '#FFF'} />
+                ) : (
+                  <>
+                    <Play size={18} color={isDark ? '#000' : '#FFF'} fill={isDark ? '#000' : '#FFF'} />
+                    <Typography variant="heading" style={{ fontSize: 15, letterSpacing: 0.5, color: planId ? colors.greenDeep : (isDark ? '#000' : '#FFF') }}>
+                      {planId ? 'Agent Plan Deployed ✓' : 'Run Autonomous Plan'}
+                    </Typography>
+                  </>
+                )}
+              </TouchableOpacity>
+              {planId && (
+                <TouchableOpacity
+                  style={styles.resetBtn}
+                  onPress={() => setPlanId(null)}
+                >
+                  <RotateCcw size={18} color={colors.textMuted} />
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
+            </View>
 
             {/* Filter Row */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={{ paddingRight: 20 }}>
@@ -383,7 +402,6 @@ const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    marginBottom: 16,
     shadowColor: colors.green,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -393,6 +411,16 @@ const makeStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   runBtnSuccess: {
     backgroundColor: colors.greenSoft,
     shadowColor: 'transparent',
+  },
+  resetBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: colors.surface2,
+    borderWidth: 1,
+    borderColor: colors.border2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   filterRow: {
     flexDirection: 'row',
