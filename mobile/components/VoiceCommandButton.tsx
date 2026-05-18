@@ -6,10 +6,12 @@ import {
   ActivityIndicator,
   Animated,
 } from 'react-native';
-import { Mic, MicOff, Send, X, Trash2 } from 'lucide-react-native';
+import { Mic, MicOff, Send, X, Trash2, Camera } from 'lucide-react-native';
 import { useVoiceCommand, VoiceCommandCallbacks } from '../hooks/useVoiceCommand';
 import { Typography } from './Typography';
 import { useAppTheme } from '../hooks/useAppTheme';
+import * as ImagePicker from 'expo-image-picker';
+import { api } from '../src/lib/api';
 
 interface VoiceCommandButtonProps {
   apiUrl: string;
@@ -48,6 +50,8 @@ export function VoiceCommandButton({ apiUrl, callbacks }: VoiceCommandButtonProp
     cancelRecording,
     clearResult,
   } = useVoiceCommand(apiUrl, callbacks);
+
+  const [isProcessingVision, setIsProcessingVision] = useState(false);
 
   // ── Recording timer ──────────────────────────────────────────────
   const [elapsed, setElapsed] = useState(0);
@@ -111,6 +115,40 @@ export function VoiceCommandButton({ apiUrl, callbacks }: VoiceCommandButtonProp
   const handleCancel = useCallback(() => {
     if (isRecording) cancelRecording();
   }, [isRecording, cancelRecording]);
+
+  const handleCameraTap = useCallback(async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        alert("Permission to access camera roll is required!");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.5,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const base64 = result.assets[0].base64;
+        if (!base64) return;
+        
+        setIsProcessingVision(true);
+        const visionIncident = await api.vision(base64);
+        
+        // Ingest the new incident
+        const ingestRes = await api.ingest(visionIncident);
+        callbacks?.onIngestSuccess?.(ingestRes);
+      }
+    } catch (e) {
+      console.error("Vision Error:", e);
+      alert("Failed to process vision incident");
+    } finally {
+      setIsProcessingVision(false);
+    }
+  }, [callbacks]);
 
   return (
     <View style={styles.container} pointerEvents="box-none">
@@ -229,23 +267,38 @@ export function VoiceCommandButton({ apiUrl, callbacks }: VoiceCommandButtonProp
 
       {/* ── Main Mic Button (idle / processing) ─────────────────── */}
       {!isRecording && (
-        <TouchableOpacity
-          style={[
-            styles.recordButton,
-            isProcessing && styles.recordButtonProcessing,
-          ]}
-          onPress={handleMicTap}
-          activeOpacity={0.85}
-          disabled={isProcessing}
-        >
-          {isProcessing ? (
-            <ActivityIndicator color={colors.green} size="small" />
-          ) : (
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-              <Mic size={26} color={colors.green} strokeWidth={2} />
-            </Animated.View>
-          )}
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[styles.cameraButton, isProcessingVision && styles.recordButtonProcessing]}
+            onPress={handleCameraTap}
+            activeOpacity={0.85}
+            disabled={isProcessing || isProcessingVision}
+          >
+            {isProcessingVision ? (
+              <ActivityIndicator color={colors.green} size="small" />
+            ) : (
+              <Camera size={22} color={colors.text} strokeWidth={2} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.recordButton,
+              isProcessing && styles.recordButtonProcessing,
+            ]}
+            onPress={handleMicTap}
+            activeOpacity={0.85}
+            disabled={isProcessing || isProcessingVision}
+          >
+            {isProcessing ? (
+              <ActivityIndicator color={colors.green} size="small" />
+            ) : (
+              <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                <Mic size={26} color={colors.green} strokeWidth={2} />
+              </Animated.View>
+            )}
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
@@ -408,6 +461,26 @@ const makeStyles = (colors: any, isDark: boolean) =>
     },
 
     // ── Mic Button (idle) ─────────────────────────────────────────
+    buttonRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    cameraButton: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.surface2,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 10,
+      elevation: 6,
+    },
     recordButton: {
       width: 58,
       height: 58,

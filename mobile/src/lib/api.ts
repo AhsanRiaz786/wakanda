@@ -50,4 +50,9 @@ export const api = {
     }),
   trace: (planId: string) =>
     request<Record<string, unknown>>(`/trace?planId=${encodeURIComponent(planId)}&includeSimTrace=true`),
+  vision: (imageBase64: string) =>
+    request<Record<string, unknown>>('/incidents/vision', {
+      method: 'POST',
+      body: JSON.stringify({ image_base64: imageBase64 }),
+    }),
 };
