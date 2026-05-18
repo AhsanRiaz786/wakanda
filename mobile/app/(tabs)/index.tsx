@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Animated, PanResponder, Platform } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Animated, PanResponder, Platform, Switch } from 'react-native';
 import MapView from 'react-native-maps';
 import { TopBar } from '../../components/TopBar';
 import { Typography } from '../../components/Typography';
@@ -13,6 +13,7 @@ import { useAppTheme } from '../../hooks/useAppTheme';
 import { usePlanContext } from '../../contexts/PlanContext';
 import { NotificationPanel } from '../../components/NotificationPanel';
 import { useStatus } from '../../contexts/StatusContext';
+import { AgentTraceBox } from '../../components/AgentTraceBox';
 
 const { height } = Dimensions.get('window');
 
@@ -40,6 +41,9 @@ export default function MapDashboardScreen() {
   const [loading, setLoading] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
   const [incidents, setIncidents] = useState<any[]>([]);
+  const [traceLogs, setTraceLogs] = useState<string[]>([]);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [chaosMode, setChaosMode] = useState(false);
 
   // Animation values for bottom sheet
   const translateY = useRef(new Animated.Value(SNAP_MID)).current;
@@ -98,13 +102,46 @@ export default function MapDashboardScreen() {
     fetchIncidents();
   }, [fetchIncidents, planId]);
 
+  // Chaos Mode Effect
+  useEffect(() => {
+    if (!chaosMode) return;
+    
+    const interval = setInterval(async () => {
+      const lat = 33.6 + Math.random() * 0.15;
+      const lng = 72.9 + Math.random() * 0.25;
+      const severities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+      const sev = severities[Math.floor(Math.random() * severities.length)];
+      
+      try {
+        await api.ingest({
+          title: `Chaos Event ${Math.floor(Math.random() * 1000)}`,
+          description: 'Automatically generated incident during chaos mode simulation.',
+          severity: sev,
+          incidentType: 'OTHER',
+          coordinates: { lat, lng }
+        });
+        fetchIncidents();
+      } catch (e) {
+        console.error("Chaos mode ingest error", e);
+      }
+    }, 8000);
+    
+    return () => clearInterval(interval);
+  }, [chaosMode, fetchIncidents]);
+
   const runPlan = useCallback(async () => {
     setLoading(true);
+    setTraceLogs(['Initializing Agent Loop...', 'Scanning active incidents...']);
     const sid = showStatus({ type: 'loading', label: 'Running AI Plan...', duration: 0 });
     try {
       const plan = await api.plan({ planMode: 'full' });
       const id = String(plan.planId);
       setPlanId(id);
+      
+      if (plan.trace_logs && Array.isArray(plan.trace_logs)) {
+        setTraceLogs(prev => [...prev, ...plan.trace_logs, 'Plan successfully generated and deployed.']);
+      }
+      
       await fetchIncidents();
       showStatus({ id: sid, type: 'success', label: 'Plan Deployed', duration: 4000 });
 
@@ -179,6 +216,7 @@ export default function MapDashboardScreen() {
           mapRef={mapRef}
           onIncidentPress={setSelectedIncident}
           selectedIncidentId={selectedIncident?.incidentId}
+          showHeatmap={showHeatmap}
         />
       </View>
 
@@ -253,12 +291,32 @@ export default function MapDashboardScreen() {
               {planId && (
                 <TouchableOpacity
                   style={styles.resetBtn}
-                  onPress={() => setPlanId(null)}
+                  onPress={() => {
+                    setPlanId(null);
+                    setTraceLogs([]);
+                  }}
                 >
                   <RotateCcw size={18} color={colors.textMuted} />
                 </TouchableOpacity>
               )}
             </View>
+
+            {/* Toggles Row */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Typography variant="body" color={colors.text} style={{ marginRight: 8, fontSize: 13, fontWeight: '600' }}>Show Heatmap</Typography>
+                <Switch value={showHeatmap} onValueChange={setShowHeatmap} trackColor={{ true: colors.green }} />
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Typography variant="body" color={colors.text} style={{ marginRight: 8, fontSize: 13, fontWeight: '600' }}>Simulate Chaos</Typography>
+                <Switch value={chaosMode} onValueChange={setChaosMode} trackColor={{ true: colors.crit }} />
+              </View>
+            </View>
+
+            {/* Agent Trace Logs */}
+            {(loading || traceLogs.length > 0) && (
+              <AgentTraceBox logs={traceLogs} />
+            )}
 
             {/* Filter Row */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={{ paddingRight: 20 }}>
