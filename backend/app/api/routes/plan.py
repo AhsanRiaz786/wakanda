@@ -27,6 +27,10 @@ async def create_plan(body: PlanRequest, mode: str = Query("agent")):
                 detail={"code": "FLOW_EXECUTION_ERROR", "message": "Failed to generate plan"},
             )
 
+        trace_steps = result.get("trace_steps", [])
+        trace_logs = [f"[{step.stepId}] {step.name}... {step.outputSummary}" for step in trace_steps]
+        plan_summary.trace_logs = trace_logs
+
         return plan_summary.model_dump(mode="json")
 
     except HTTPException:

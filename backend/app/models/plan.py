@@ -40,3 +40,4 @@ class PlanSummary(BaseModel):
     conflictsResolved: int
     constraintViolations: list[ConstraintViolation] = Field(default_factory=list)
     priorityOrdering: list[str]
+    trace_logs: list[str] = Field(default_factory=list)
