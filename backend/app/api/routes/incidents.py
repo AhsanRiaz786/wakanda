@@ -1,8 +1,14 @@
+import uuid
+import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
+from langchain_core.messages import HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+from app.config import settings
+from app.models.enums import IncidentType, Severity
 from app.state.workspace import get_store
 
 router = APIRouter()
@@ -14,6 +20,17 @@ class IncidentPatch(BaseModel):
     severity: str | None = None
     status: str | None = None
     rawDescription: str | None = None
+
+
+class VisionRequest(BaseModel):
+    image_base64: str
+
+
+class VisionExtractedIncident(BaseModel):
+    title: str
+    description: str
+    severity: Severity
+    incidentType: IncidentType
 
 
 @router.get("/incidents")
@@ -52,3 +69,40 @@ def delete_incident(incident_id: str):
     if not deleted:
         raise HTTPException(status_code=404, detail="Incident not found")
     return {"deleted": True, "incidentId": incident_id}
+
+
+@router.post("/incidents/vision")
+def process_vision_incident(request: VisionRequest):
+    if not settings.google_api_key:
+        raise HTTPException(status_code=500, detail="Google API Key not configured")
+
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-1.5-flash",
+        api_key=settings.google_api_key,
+        temperature=0.0
+    ).with_structured_output(VisionExtractedIncident)
+
+    prompt = "Analyze this image and extract incident details: title, detailed description, severity (LOW, MEDIUM, HIGH, CRITICAL), and incidentType (TRAFFIC, MEDICAL, FIRE, SECURITY, INFRASTRUCTURE, OTHER). If it looks like a traffic issue, classify as TRAFFIC. If fire, FIRE, etc."
+
+    try:
+        msg = HumanMessage(
+            content=[
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{request.image_base64}"}}
+            ]
+        )
+        extracted = llm.invoke([msg])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Vision API error: {str(e)}")
+
+    incident_id = f"inc_{uuid.uuid4().hex[:8]}"
+    return {
+        "incidentId": incident_id,
+        "title": extracted.title,
+        "description": extracted.description,
+        "severity": extracted.severity.value if hasattr(extracted.severity, "value") else extracted.severity,
+        "incidentType": extracted.incidentType.value if hasattr(extracted.incidentType, "value") else extracted.incidentType,
+        "status": "OPEN",
+        "sourceType": "VISION",
+        "createdAt": datetime.datetime.utcnow().isoformat() + "Z"
+    }
