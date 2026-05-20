@@ -1,0 +1,4 @@
+- `[x]` Frontend: Add Chaos Mode toggle and logic to `index.tsx`
+- `[x]` Frontend: Add Show Heatmap toggle to `index.tsx`
+- `[x]` Frontend: Modify `Map.tsx` to support clustering and drawing predictive heatmaps
+- `[x]` Verification: Test toggles and map rendering
