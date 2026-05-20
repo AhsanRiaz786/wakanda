@@ -31,7 +31,7 @@ export default function TabLayout() {
       tabBar={() => (
         <>
           <VoiceCommandButton
-            apiUrl={process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000/v1'}
+            apiUrl={process.env.EXPO_PUBLIC_API_BASE_URL || 'https://wakanda-backend.onrender.com/v1'}
             callbacks={{ onIngestSuccess: handleIngestSuccess }}
           />
           <BottomNav

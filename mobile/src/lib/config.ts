@@ -1,11 +1,13 @@
 import Constants from 'expo-constants';
 
-let HOST = 'localhost';
+// In production builds, always use the deployed backend.
+// In dev mode, auto-detect the local dev machine IP so physical devices can reach it.
+let devUrl = 'https://wakanda-backend.onrender.com/v1';
 
-// Automatically detect the host IP address when running in Expo development mode
 if (__DEV__ && Constants.expoConfig?.hostUri) {
-  HOST = Constants.expoConfig.hostUri.split(':')[0];
+  const HOST = Constants.expoConfig.hostUri.split(':')[0];
+  devUrl = `http://${HOST}:8000/v1`;
 }
 
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || `http://${HOST}:8000/v1`;
+  process.env.EXPO_PUBLIC_API_BASE_URL || devUrl;
