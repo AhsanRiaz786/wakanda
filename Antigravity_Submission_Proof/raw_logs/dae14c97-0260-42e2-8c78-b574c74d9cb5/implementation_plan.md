@@ -1,56 +1,64 @@
-# Fix API Errors and Implement Multi-Tiered Fallback
+# Restrict Voice & Camera Buttons to the Report Tab Only
 
-Based on the server logs and the screenshots provided, the `422 Unprocessable Entity` errors are indeed caused by incorrect payloads being sent from the React Native frontend to the backend `/v1/ingest` endpoint.
+## Problem
 
-Additionally, we will implement a multi-tiered LLM fallback chain to ensure the backend never crashes when hitting Groq API rate limits (`429`).
+The `VoiceCommandButton` (which renders both the 🎙 Mic and 📷 Camera floating action buttons) is mounted globally in `app/(tabs)/_layout.tsx`. This means it floats in the bottom-right corner on **every single tab** — the Map, Incidents list, Trace, and Settings — which is bad UX. These controls are only relevant when a user wants to file a report.
 
-## User Review Required
-> [!IMPORTANT]
-> The fixes for the `422` errors will be done in the **frontend code** rather than relaxing the backend enums. This keeps our data model clean and adheres to the API contract.
-> - For Chaos Mode, I will map the payload to use `rawDescription` and assign `sourceType: "realtime_feed"`.
-> - For the New Report screen, I will change `sourceType: "field_report"` to `sourceType: "realtime_feed"`.
-> Please confirm if `realtime_feed` is the preferred source type for these!
+## Proposed Solution
 
-## Open Questions
-> [!WARNING]
-> Do you have a specific secondary Groq model in mind for the failover (e.g., `llama3-70b-8192` or `mixtral-8x7b-32768`), or should I pick one automatically?
+Two-phase change:
+
+### Phase 1 — Remove the Global Floating Button
+
+Remove `<VoiceCommandButton>` from `_layout.tsx` entirely. It must no longer be rendered globally in the tab bar.
+
+### Phase 2 — Integrate Inline into the Report Screen
+
+Instead of a floating overlay, the Mic and Camera inputs will become **first-class UI elements** inside `report.tsx`, sitting consistently within the page layout alongside the existing text input. This makes the Report screen the single, clean entry point for all three input methods:
+
+1. 📝 **Text** – existing textarea  
+2. 🎙 **Voice** – inline mic button that expands into a recording bar  
+3. 📷 **Camera/Gallery** – inline camera button that triggers the vision pipeline
+
+---
 
 ## Proposed Changes
 
-### 1. Fix `422 Unprocessable Entity` on `ingest` (Frontend Fixes)
+### [MODIFY] [_layout.tsx](file:///d:/Documents/Project/CityIncidentWorkspace/wakanda/mobile/app/(tabs)/_layout.tsx)
+- Remove the `VoiceCommandButton` import and its JSX render inside the `tabBar` prop.
+- Keep the `handleIngestSuccess` callback logic but pass it down (or handle inline in `report.tsx`).
 
-We need to fix the React Native frontend code so it sends valid `IngestRequest` payloads.
+---
 
-#### [MODIFY] `mobile/app/(tabs)/index.tsx` (Chaos Mode)
-- Change `description` to `rawDescription`.
-- Add the missing `sourceType` field (set to `"realtime_feed"`).
-- Change `coordinates` to `rawCoordinates`.
-- Remove the extra fields (`title`, `severity`, `incidentType`) that the backend `IngestRequest` model does not accept.
+### [MODIFY] [report.tsx](file:///d:/Documents/Project/CityIncidentWorkspace/wakanda/mobile/app/(tabs)/report.tsx)
+Redesign to feature three clearly labelled input method sections:
 
-#### [MODIFY] `mobile/app/(tabs)/report.tsx` (New Report Screen)
-- Change `"sourceType": "field_report"` to `"sourceType": "realtime_feed"`. (Since `"field_report"` is not in the backend's `SourceType` enum).
+```
+┌────────────────────────────────┐
+│  📍 Location Row               │
+├────────────────────────────────┤
+│  OBSERVATION                   │
+│  [ Text area input           ] │
+├────────────────────────────────┤
+│  VOICE INPUT                   │
+│  [ 🎙 Mic button + wave bar  ] │
+├────────────────────────────────┤
+│  ATTACH MEDIA                  │
+│  [ 📷 Camera ]  [ 🖼 Gallery ] │
+├────────────────────────────────┤
+│  [ Submit Field Report       ] │
+└────────────────────────────────┘
+```
 
-### 2. Implement Groq -> Groq -> Gemini Fallback Mechanism
+- Inline the entire `useVoiceCommand` hook logic directly into `report.tsx`.
+- Render the recording timer bar and waveform **inline** (not floating).
+- On ingest success from voice, show the same green confirmation banner already used by text submit.
+- Camera/Gallery buttons remain as-is but move to be part of the inline layout (they already exist here, so just clean up the duplication from `VoiceCommandButton`).
 
-Currently, `invoke_with_retry` in `GroqLLMProvider` immediately aborts on a `429 Rate Limit` and returns dummy fallback data. We will change this to fallback dynamically across multiple models.
-
-#### [MODIFY] `app/llm/base.py`
-- Modify `_is_non_retryable(err)` so that it does **not** consider `429` as non-retryable. `429` (Rate limits) should be retryable or safely handled by the failover chain.
-
-#### [MODIFY] `app/llm/factory.py`
-- Create a `FailoverLLMProvider` that implements the `LLMProvider` interface.
-- It will accept a list of providers (e.g., Groq Primary -> Groq Secondary -> Gemini).
-- In its methods (`classify`, `resolve_contradiction`, `draft_notifications`), it will iterate through the providers. If one fails, it catches the error and tries the next one.
-
-#### [MODIFY] `app/llm/groq_provider.py` & `app/llm/gemini_provider.py`
-- Remove the local dummy `_fallback` from `GroqLLMProvider` and `GeminiLLMProvider` methods. Instead, if they fail, they will raise an exception.
-- The `FailoverLLMProvider` will provide the final dummy fallback data to ensure the graph never crashes and the `500` error is avoided only if ALL models in the chain fail.
+---
 
 ## Verification Plan
 
-### Automated Tests
-- Run `scripts/smoke_test.sh` to ensure `/v1/plan` completes successfully.
-
-### Manual Verification
-- In the mobile app, run "Simulate Chaos" and submit a "New Report" to verify that no `422` errors appear in the backend logs.
-- Intentionally pass an invalid Groq model name for the primary provider to force a failover, and verify via logs that the secondary Groq model successfully picked up the request.
+1. Launch the app and verify the Mic/Camera FABs are **gone** from the Map, Incidents, Trace and Settings tabs.
+2. Navigate to Report tab and verify all three input methods (text, voice, camera) work correctly and display confirmation on success.
+3. Confirm that the layout is visually consistent and nothing overlaps the bottom nav.
