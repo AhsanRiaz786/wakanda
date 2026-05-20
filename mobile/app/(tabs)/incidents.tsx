@@ -11,7 +11,7 @@ import {
   Animated,
   Pressable,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { Search, ChevronDown, Activity, MapPin, Navigation, X, Check } from 'lucide-react-native';
 import { Typography } from '../../components/Typography';
 import { TopBar } from '../../components/TopBar';
@@ -76,7 +76,11 @@ export default function IncidentsScreen() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   const toggleSortMenu = (open: boolean) => {
     setSortMenuVisible(open);

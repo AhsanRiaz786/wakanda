@@ -8,7 +8,7 @@ import { Play, MapPin, Activity, Clock, Navigation, RotateCcw } from 'lucide-rea
 import { api } from '@/src/lib/api';
 import { Map } from '../../components/Map';
 import { IncidentCallout } from '../../components/IncidentCallout';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { usePlanContext } from '../../contexts/PlanContext';
 import { NotificationPanel } from '../../components/NotificationPanel';
@@ -98,9 +98,11 @@ export default function MapDashboardScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchIncidents();
-  }, [fetchIncidents, planId]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchIncidents();
+    }, [fetchIncidents, planId])
+  );
 
   // Chaos Mode Effect
   useEffect(() => {
