@@ -1,6 +1,0 @@
-- `[x]` Add `langchain-groq` to dependencies.
-- `[x]` Update `app/config.py` and `.env` to use `llama-3.1-8b-instant`.
-- `[x]` Create `app/llm/groq_provider.py`.
-- `[x]` Refactor `app/llm/factory.py` to default to Groq.
-- `[x]` Restart backend server.
-- `[x]` Run end-to-end smoke test to verify 6-incident processing via Groq.

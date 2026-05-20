@@ -1,0 +1,319 @@
+# CityIRA — Zain Foundation Implementation Plan
+
+**Scope:** Zain's section of `cityira-backend-handoff.md` — Tasks 1–7 + smoke gate.  
+**Out of scope:** `app/nodes/`, multi-node graphs (Eagle), full pytest suite (Shaka).  
+**Success criteria:** `./backend/scripts/smoke_test.sh` passes with `MOCK_LLM=true`.
+
+---
+
+## Execution Strategy
+
+We use a **contract-first, parallel-wave** model based on the agent briefs.  
+You (Zain) run each wave **as a single Antigravity session** — one wave at a time, in order.
+
+```mermaid
+flowchart LR
+  W0[🏗️ Wave 0 — CONTRACT\n~1 hr] --> A[⚡ Agent A\nLLM / Gemini]
+  W0 --> B[⚡ Agent B\nContradiction]
+  W0 --> C[⚡ Agent C\nIngest Flow]
+  W0 --> D[⚡ Agent D\nPlan Flow]
+  W0 --> E[⚡ Agent E\nSimulate Flow]
+  W0 --> F[⚡ Agent F\nTrace + Baseline]
+  A --> I[🔗 Wave 2\nIntegrator]
+  B --> I
+  C --> I
+  D --> I
+  E --> I
+  F --> I
+```
+
+> [!IMPORTANT]
+> Wave 0 must finish and be committed before Wave 1 agents start. It freezes the shared interfaces that all agents depend on.
+
+---
+
+## Wave 0 — CONTRACT (do this first, alone)
+
+**Goal:** Freeze all shared types and stub APIs so Wave 1 agents never block on each other.
+
+### [NEW] `backend/app/llm/__init__.py`
+Empty package init — exposes `get_llm_provider` from factory.
+
+### [NEW] `backend/app/llm/schemas.py`
+Pydantic models matching `plan.md §4.10.3`:
+
+| Model | Fields |
+|-------|--------|
+| `ClassificationResult` | `incident_type`, `severity`, `urgency_score`, `confidence`, `reasoning` |
+| `ResolvedConflict` | `winning_incident_id`, `resolution`, `confidence`, `low_confidence_resolution`, `rationale` |
+| `NotificationDrafts` | `operator`, `public` (≤280 chars), `department` |
+| `ContradictionGroup` | `incident_ids`, `distance_m`, `age_diff_minutes`, `conflict_reason` |
+
+Also includes enum helpers to convert `ClassificationResult` ↔ internal `IncidentType`/`Severity` enums.
+
+### [NEW] `backend/app/llm/protocol.py`
+```python
+class LLMProvider(Protocol):
+    def classify(self, incident: Incident) -> ClassificationResult: ...
+    def resolve_contradiction(self, incidents: list[Incident]) -> ResolvedConflict: ...
+    def draft_notifications(self, incident_id: str, incident_type: str) -> NotificationDrafts: ...
+```
+
+### [NEW] `backend/app/llm/prompts.py`
+System prompt constants only (no logic). Three prompts from `plan.md §4.10.4`:
+- `CLASSIFIER_SYSTEM_PROMPT`
+- `RESOLVER_SYSTEM_PROMPT`
+- `NOTIFICATION_SYSTEM_PROMPT`
+
+### [NEW] `backend/app/llm/mock_provider.py`
+Ports current `_mock_classify`, `_mock_notifications` from `llm_tools.py`. Returns `ClassificationResult` / `NotificationDrafts` Pydantic models (not raw dicts).
+
+### [NEW] `backend/app/llm/factory.py`
+```python
+def get_llm_provider() -> LLMProvider:
+    if settings.mock_llm or not settings.google_api_key:
+        return MockLLMProvider()
+    return GeminiLLMProvider(...)   # stub — Agent A fills real impl
+```
+
+### [MODIFY] `backend/app/tools/contradiction.py` *(stub only)*
+Create file with frozen public API that returns empty/minimal stubs:
+```python
+def detect_contradiction_groups(incidents) -> list[ContradictionGroup]: return []
+def score_source(incident, now) -> float: return 0.5
+def resolve_group(incidents) -> ResolvedConflict: ...  # minimal valid object
+```
+Agent B replaces the bodies without renaming anything.
+
+### [MODIFY] `backend/app/tools/llm_tools.py`
+Delegate `classify_incident` and `draft_notifications` to `get_llm_provider()`.  
+Keep `resolve_contradiction` as-is temporarily (Agent A wires properly).
+
+**Wave 0 done when:**
+```bash
+cd backend
+uv run python -c "from app.llm.schemas import ClassificationResult; from app.tools import llm_tools, contradiction"
+# existing run_plan / smoke still pass
+```
+
+---
+
+## Wave 1 — Six Parallel Agents
+
+> [!NOTE]
+> All six agents start from the same commit (Wave 0 merged to `main`). They touch **strictly non-overlapping files** so there are zero merge conflicts between them.
+
+### Agent A — LLM / Gemini
+
+**Branch:** `zain/agent-a-llm`
+
+#### [NEW] `backend/app/llm/gemini_provider.py`
+- `ChatGoogleGenerativeAI` + `.with_structured_output(PydanticModel)`
+- Temperatures: `classify`/`resolve` = 0.2, `draft_notifications` = 0.4
+- Retry once on parse failure → safe defaults (`other`/`medium`, template drafts)
+
+#### [NEW] `backend/app/llm/base.py`
+Shared `invoke_with_retry(chain, fallback_fn)` helper.
+
+#### [MODIFY] `backend/app/llm/factory.py`
+Wire `GeminiLLMProvider` into factory (extends Wave 0 stub).
+
+#### [MODIFY] `backend/app/tools/llm_tools.py`
+Wire `resolve_contradiction` → `get_llm_provider().resolve_contradiction(...)` (delegates to `contradiction.resolve_group` for winner selection; LLM enriches rationale only).
+
+**Done when:** `MOCK_LLM=false` + key classifies one incident correctly.
+
+---
+
+### Agent B — Contradiction Algorithm
+
+**Branch:** `zain/agent-b-contradiction`
+
+#### [MODIFY] `backend/app/tools/contradiction.py`
+Replace Wave 0 stubs with real implementation:
+
+| Function | Logic |
+|----------|-------|
+| `haversine_m(a, b)` | Geo distance in metres |
+| `detect_contradiction_groups(incidents)` | Cluster same 200 m + 60 min window; flag if type differs OR severity >1 level apart |
+| `score_source(incident, now)` | `0.6 × SOURCE_WEIGHT + 0.4 × exp(-ageMinutes/30)` |
+| `resolve_group(incidents)` | Pick winner by score; set `confidence`; flag `low_confidence_resolution` if < 0.6 |
+
+Source weights: `csv_json=0.95`, `pdf_report=0.90`, `table_dashboard=0.85`, `realtime_feed=0.80`, `web_article=0.70`
+
+**Done when:** Demo Market Quarter pair (csv_json vs web_article, ~50 m apart) → `water_leak` wins without any hardcoded lat/lon `if` block.
+
+---
+
+### Agent C — Ingest Flow
+
+**Branch:** `zain/agent-c-ingest`
+
+#### [MODIFY] `backend/app/flows/ingest_flow.py`
+Break monolithic `run_ingest` into 6 step functions:
+
+| Step | Signature | Notes |
+|------|-----------|-------|
+| `validate_input` | `(body) -> ApiError \| None` | Min 10 chars; valid `sourceType` |
+| `normalize_timestamp` | `(raw) -> tuple[str, str]` | ISO parse or UTC now + warning |
+| `normalize_location` | `(store, body) -> tuple[Coords\|None, bool, str\|None, float]` | Confidence < 0.3 → clarification flag |
+| `sanitize_description` | `(raw) -> str` | Strip HTML, collapse whitespace, max 2000 |
+| `assign_id` | `(store) -> str` | `ids.next_incident_id()` |
+| `persist_incident` | `(store, incident) -> tuple[Incident\|None, bool]` | Duplicate check (same desc + coords ≤ 10 min) |
+
+`run_ingest` orchestrates all six in order; appends trace steps; returns `(incident, trace, error, is_duplicate)`.
+
+**Done when:** Happy path unchanged; duplicate returns existing incident + `is_duplicate=True`.
+
+---
+
+### Agent D — Plan Flow
+
+**Branch:** `zain/agent-d-plan`
+
+#### [MODIFY] `backend/app/flows/plan_flow.py`
+Break into 10 step functions (import tools by API only, never edit them):
+
+| # | Function | Notes |
+|---|----------|-------|
+| 1 | `fetch_open_incidents` | Filter by status ≠ resolved |
+| 2 | `classify_incidents` | Calls `llm_tools.classify_incident` per incident |
+| 3 | `detect_contradictions` | Calls `contradiction.detect_contradiction_groups` |
+| 4 | `resolve_contradictions` | Per group → `contradiction.resolve_group` + optional LLM rationale |
+| 5 | `route_and_match` | `routing.py` + `resources.py` |
+| 6 | `build_chains` | Extracts `_build_action_chain` |
+| 7 | `check_constraints` | Budget/time vs `settings` |
+| 8 | `draft_all_notifications` | Calls `llm_tools.draft_notifications` |
+| 9 | `prioritize` | `urgencyScore × severityMult × sourceCred` |
+| 10 | `persist_plan` | Saves to store |
+
+**Quick mode:** `planMode == "quick"` → skip steps 3–4.  
+**No Market Quarter `if` block** — generic detection only.
+
+Priority formula:
+```
+severityMult: critical=4, high=3, medium=2, low=1
+sourceCred: csv_json=1.0, pdf_report=0.95, table_dashboard=0.9, realtime_feed=0.85, web_article=0.75
+```
+
+**Done when:** `POST /plan` returns `planId`; contradictions detected when demo seeds present; quick mode skips steps 3–4.
+
+---
+
+### Agent E — Simulate Flow
+
+**Branch:** `zain/agent-e-simulate`
+
+#### [MODIFY] `backend/app/flows/simulate_flow.py`
+Break into 8 step functions:
+
+| Step | Notes |
+|------|-------|
+| `load_plan` | `ValueError` if missing (→ Eagle maps to 404) |
+| `capture_before_state` | `store.snapshot_city_state()` |
+| `execute_action_chains` | Per-step status transitions |
+| `inject_failure_and_retry` | `forceApiFailure` path |
+| `capture_after_state` | Resolve IN_PROGRESS → RESOLVED |
+| `compute_metrics` | Incidents/roads/crews deltas |
+| `build_animation_frames` | `fast`=4, `realtime`=12, `instant`=1 frames; interpolate crew homeBase → incident; road open→restricted→closed |
+| `persist_simulation` | `store.save_simulation` |
+
+**Done when:** Simulation returns correct `animationFrames` count per speed; smoke still 200 OK.
+
+---
+
+### Agent F — Trace + Baseline
+
+**Branch:** `zain/agent-f-trace`
+
+#### [MODIFY] `backend/app/services/trace_builder.py`
+Add:
+```python
+def filter_trace_steps(steps: list, depth: Literal["summary","full"]) -> list:
+    # summary: top-level only (strip children=[])
+    # full: return unchanged
+```
+
+#### [MODIFY] `backend/app/flows/trace_flow.py`
+Pass `depth` through to `filter_trace_steps`.
+
+#### [MODIFY] `backend/app/api/routes/trace.py`
+Read `depth` query param; pass to `run_trace(..., depth)`.
+
+#### [MODIFY] `backend/app/services/baseline.py`
+Verify/fix keyword routing matches `plan.md §14.2` exactly:
+
+| Keywords | Department |
+|----------|------------|
+| water, flood | DEPT-UTIL |
+| power, electric | DEPT-UTIL |
+| accident, crash | DEPT-EMER |
+| road, block | DEPT-TRAFFIC |
+| *(else)* | DEPT-GEN |
+
+No LLM imports anywhere in this file.
+
+**Done when:** `GET /trace?depth=summary` strips children; `GET /trace?depth=full` returns complete tree; baseline keyword table correct.
+
+---
+
+## Wave 2 — INTEGRATOR (last, alone)
+
+**Branch:** `zain/wave-2-integrate`
+
+Merge order to minimize conflicts:
+1. `zain/wave-0-contracts` → `main` *(already done before Wave 1)*
+2. Any order: **B, C, E, F** *(no shared files)*
+3. **A** (`llm_tools` + `llm` package)
+4. **D** (`plan_flow` — benefits from B merged first)
+5. `zain/wave-2-integrate` → fix any import conflicts only
+
+**Commands:**
+```bash
+cd backend && uv sync
+uv run python scripts/seed_demo_incidents.py
+./scripts/smoke_test.sh
+# With real key (optional):
+MOCK_LLM=false GOOGLE_API_KEY=<key> ./scripts/smoke_test.sh
+```
+
+**May touch:** Any file **only** to fix imports/merge conflicts.  
+**Must not:** Add features or expand scope.
+
+---
+
+## Verification Plan
+
+### Automated Checks (per wave)
+| Check | Command |
+|-------|---------|
+| Wave 0 import check | `uv run python -c "from app.llm.schemas import ClassificationResult"` |
+| Contradiction unit | `uv run python -c "from app.tools.contradiction import detect_contradiction_groups"` |
+| Smoke (mock) | `MOCK_LLM=true ./scripts/smoke_test.sh` |
+| Smoke (real LLM) | `MOCK_LLM=false GOOGLE_API_KEY=... ./scripts/smoke_test.sh` |
+
+### Manual Verification (final)
+- `POST /ingest` → incident created, trace has 6 steps
+- `POST /plan` → `planId` returned, contradictions detected in demo seeds
+- `POST /plan?mode=baseline` → no LLM calls
+- `POST /plan` with `planMode=quick` → contradiction steps skipped
+- `GET /simulate` → `animationFrames` has 4 frames (fast), 12 (realtime), 1 (instant)
+- `GET /trace?depth=summary` → top-level steps only
+- `GET /trace?depth=full` → complete nested tree
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **Q1 — Single session or true parallel?**  
+> Do you want me to implement all waves sequentially in **this single Antigravity session** (fastest for a hackathon), or do you want to open **separate IDE sessions** per agent for true parallelism (as described in the plan)?  
+> _Recommendation: single session, wave-by-wave — avoids git worktree overhead for a 36-hr sprint._
+
+> [!IMPORTANT]
+> **Q2 — `GOOGLE_API_KEY` availability**  
+> Is your `GOOGLE_API_KEY` already set in `backend/.env`? Agent A needs it to verify real Gemini calls. If not, Mock path will be the only verified path.
+
+> [!NOTE]
+> **Q3 — `contradiction.py` file existence**  
+> The tools directory currently has `geo.py`, `llm_tools.py`, `resources.py`, `routing.py` — **no `contradiction.py` yet.** Wave 0 will create it fresh. Confirm this is expected.

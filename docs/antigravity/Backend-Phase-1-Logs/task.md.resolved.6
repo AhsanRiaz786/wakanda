@@ -1,0 +1,44 @@
+# CityIRA Foundation — Task Tracker
+
+## Wave 0 — CONTRACT (freeze interfaces)
+- `[x]` Create `backend/app/llm/__init__.py`
+- `[x]` Create `backend/app/llm/schemas.py` (ClassificationResult, ResolvedConflict, NotificationDrafts, ContradictionGroup)
+- `[x]` Create `backend/app/llm/protocol.py` (LLMProvider Protocol)
+- `[x]` Create `backend/app/llm/prompts.py` (system prompt constants)
+- `[x]` Create `backend/app/llm/mock_provider.py` (port _mock_* from llm_tools)
+- `[x]` Create `backend/app/llm/factory.py` (mock-only factory stub)
+- `[x]` Create `backend/app/tools/contradiction.py` (stubs returning empty/minimal)
+- `[x]` Modify `backend/app/tools/llm_tools.py` (delegate classify + draft to factory)
+- `[x]` Verify: `uv run python -c "from app.llm.schemas import ClassificationResult"`
+
+## Wave 1 — Parallel Agents (sequential in this session)
+
+### Agent A — LLM / Gemini
+- `[x]` Create `backend/app/llm/base.py` (invoke_with_retry helper)
+- `[x]` Create `backend/app/llm/gemini_provider.py` (structured output, retry, fallbacks)
+- `[x]` Extend `backend/app/llm/factory.py` (wire GeminiLLMProvider)
+- `[x]` Extend `backend/app/tools/llm_tools.py` (wire resolve_contradiction to provider)
+
+### Agent B — Contradiction Algorithm
+- `[x]` Implement `backend/app/tools/contradiction.py` (haversine, detect_groups, score_source, resolve_group)
+
+### Agent C — Ingest Flow
+- `[x]` Rewrite `backend/app/flows/ingest_flow.py` (6 step functions + orchestrator)
+
+### Agent D — Plan Flow
+- `[x]` Rewrite `backend/app/flows/plan_flow.py` (10 step functions + orchestrator)
+
+### Agent E — Simulate Flow
+- `[x]` Rewrite `backend/app/flows/simulate_flow.py` (8 step functions + animation frames)
+
+### Agent F — Trace + Baseline
+- `[ ]` Add `filter_trace_steps` to `backend/app/services/trace_builder.py`
+- `[ ]` Update `backend/app/flows/trace_flow.py` (pass depth through)
+- `[ ]` Update `backend/app/api/routes/trace.py` (read depth query param)
+- `[ ]` Verify/fix `backend/app/services/baseline.py` keywords
+
+## Wave 2 — INTEGRATOR
+- `[ ]` Run `uv run python scripts/seed_demo_incidents.py`
+- `[ ]` Run `MOCK_LLM=true ./scripts/smoke_test.sh`
+- `[ ]` Run `MOCK_LLM=false ./scripts/smoke_test.sh` (real Gemini)
+- `[ ]` Fix any import conflicts
