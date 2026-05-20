@@ -13,6 +13,7 @@ They do NOT import GeminiLLMProvider or MockLLMProvider directly.
 """
 
 from __future__ import annotations
+import logging
 
 from typing import TYPE_CHECKING
 
@@ -21,17 +22,52 @@ from app.llm.mock_provider import MockLLMProvider
 
 if TYPE_CHECKING:
     from app.llm.protocol import LLMProvider
+    from app.models.incident import Incident
+    from app.llm.schemas import ClassificationResult, ResolvedConflict, NotificationDrafts
+
+logger = logging.getLogger(__name__)
 
 # Singleton cache — one provider instance per process (thread-safe for our use case)
 _provider_instance: "LLMProvider | None" = None
 
 
-def get_llm_provider() -> "LLMProvider":
-    """Return the active LLMProvider singleton.
+class FailoverLLMProvider:
+    """Routes requests through multiple providers, falling back sequentially."""
 
-    Agent A (Wave 1) will import GeminiLLMProvider here and replace the stub
-    without touching any flow files.
-    """
+    def __init__(self, providers: list["LLMProvider"], fallback: "LLMProvider"):
+        self.providers = providers
+        self.fallback = fallback
+
+    def classify(self, incident: "Incident") -> "ClassificationResult":
+        for p in self.providers:
+            try:
+                return p.classify(incident)
+            except Exception as e:
+                logger.warning(f"Provider {p.__class__.__name__} failed to classify: {e}")
+        logger.error("All active providers failed. Using dummy fallback.")
+        return self.fallback.classify(incident)
+
+    def resolve_contradiction(self, incidents: list["Incident"]) -> "ResolvedConflict":
+        for p in self.providers:
+            try:
+                return p.resolve_contradiction(incidents)
+            except Exception as e:
+                logger.warning(f"Provider {p.__class__.__name__} failed to resolve: {e}")
+        logger.error("All active providers failed. Using dummy fallback.")
+        return self.fallback.resolve_contradiction(incidents)
+
+    def draft_notifications(self, incident_id: str, incident_type: str) -> "NotificationDrafts":
+        for p in self.providers:
+            try:
+                return p.draft_notifications(incident_id, incident_type)
+            except Exception as e:
+                logger.warning(f"Provider {p.__class__.__name__} failed to draft: {e}")
+        logger.error("All active providers failed. Using dummy fallback.")
+        return self.fallback.draft_notifications(incident_id, incident_type)
+
+
+def get_llm_provider() -> "LLMProvider":
+    """Return the active LLMProvider singleton."""
     global _provider_instance
     if _provider_instance is None:
         _provider_instance = _build_provider()
@@ -39,29 +75,35 @@ def get_llm_provider() -> "LLMProvider":
 
 
 def _build_provider() -> "LLMProvider":
-    use_mock = settings.mock_llm or not settings.google_api_key
+    use_mock = settings.mock_llm
 
     if use_mock:
         return MockLLMProvider()
 
+    providers: list["LLMProvider"] = []
+    
     try:
-        from app.llm.groq_provider import GroqLLMProvider  # noqa: PLC0415
-
+        from app.llm.groq_provider import GroqLLMProvider
         if settings.groq_api_key:
-            return GroqLLMProvider(
-                model=settings.llm_model,
-                api_key=settings.groq_api_key,
-            )
-            
-        # Fallback to Gemini if groq_api_key not present
-        from app.llm.gemini_provider import GeminiLLMProvider  # noqa: PLC0415
-        return GeminiLLMProvider(
-            model=settings.llm_model,
-            api_key=settings.google_api_key,
-        )
+            # Primary: Instant model
+            providers.append(GroqLLMProvider(model=settings.llm_model, api_key=settings.groq_api_key))
+            # Secondary: 70b model
+            providers.append(GroqLLMProvider(model="llama-3.3-70b-versatile", api_key=settings.groq_api_key))
     except ImportError:
-        # provider files not yet created or dependencies missing — fall back safely
+        pass
+
+    try:
+        from app.llm.gemini_provider import GeminiLLMProvider
+        if settings.google_api_key:
+            # Tertiary: Gemini model
+            providers.append(GeminiLLMProvider(model="gemini-1.5-pro", api_key=settings.google_api_key))
+    except ImportError:
+        pass
+
+    if not providers:
         return MockLLMProvider()
+        
+    return FailoverLLMProvider(providers=providers, fallback=MockLLMProvider())
 
 
 def reset_provider() -> None:

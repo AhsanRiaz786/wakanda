@@ -71,16 +71,7 @@ class GroqLLMProvider:
                 ]
             )
 
-        def _fallback() -> ClassificationResult:
-            return ClassificationResult(
-                incident_type=IncidentType.OTHER,
-                severity=Severity.MEDIUM,
-                urgency_score=5,
-                confidence=0.1,
-                reasoning="Fallback used after LLM failure.",
-            )
-
-        return invoke_with_retry(_invoke, _fallback)
+        return invoke_with_retry(_invoke, fallback_fn=None)
 
     # ------------------------------------------------------------------
     # resolve_contradiction
@@ -118,7 +109,7 @@ class GroqLLMProvider:
             deterministic_resolution.low_confidence_resolution = res.confidence < 0.6
             return deterministic_resolution
 
-        return invoke_with_retry(_invoke, lambda: deterministic_resolution)
+        return invoke_with_retry(_invoke, fallback_fn=None)
 
     # ------------------------------------------------------------------
     # draft_notifications
@@ -137,11 +128,4 @@ class GroqLLMProvider:
                 ]
             )
 
-        def _fallback() -> NotificationDrafts:
-            return NotificationDrafts(
-                operator_alert=f"INCIDENT {incident_id}: {incident_type} — Crews dispatched.",
-                public_announcement="Service disruption reported. Avoid affected area.",
-                department_ticket=f"Dispatch required for {incident_id}.",
-            )
-
-        return invoke_with_retry(_invoke, _fallback)
+        return invoke_with_retry(_invoke, fallback_fn=None)

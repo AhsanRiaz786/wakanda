@@ -86,7 +86,7 @@ export default function ReportIncidentScreen() {
     try {
       const body: Record<string, unknown> = {
         rawDescription: description,
-        sourceType: 'field_report',
+        sourceType: 'realtime_feed',
         rawCoordinates: { lat: 33.7205, lng: 73.0478 },
         rawAddress: 'Sector G-11, Islamabad',
       };

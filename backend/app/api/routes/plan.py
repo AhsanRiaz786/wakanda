@@ -28,7 +28,7 @@ async def create_plan(body: PlanRequest, mode: str = Query("agent")):
             )
 
         trace_steps = result.get("trace_steps", [])
-        trace_logs = [f"[{step.stepId}] {step.name}... {step.outputSummary}" for step in trace_steps]
+        trace_logs = [f"[{step['stepId']}] {step['name']}... {step['outputSummary']}" for step in trace_steps]
         plan_summary.trace_logs = trace_logs
 
         return plan_summary.model_dump(mode="json")
@@ -36,6 +36,8 @@ async def create_plan(body: PlanRequest, mode: str = Query("agent")):
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail={"code": "FLOW_EXECUTION_ERROR", "message": str(e)},

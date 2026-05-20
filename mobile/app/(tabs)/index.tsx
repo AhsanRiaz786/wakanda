@@ -114,11 +114,9 @@ export default function MapDashboardScreen() {
       
       try {
         await api.ingest({
-          title: `Chaos Event ${Math.floor(Math.random() * 1000)}`,
-          description: 'Automatically generated incident during chaos mode simulation.',
-          severity: sev,
-          incidentType: 'OTHER',
-          coordinates: { lat, lng }
+          rawDescription: `Chaos Event ${Math.floor(Math.random() * 1000)}: Automatically generated incident during chaos mode simulation. Severity: ${sev}`,
+          sourceType: 'realtime_feed',
+          rawCoordinates: { lat, lng }
         });
         fetchIncidents();
       } catch (e) {

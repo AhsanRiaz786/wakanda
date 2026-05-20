@@ -20,7 +20,6 @@ def _is_non_retryable(err: Exception) -> bool:
         token in msg
         for token in (
             "RESOURCE_EXHAUSTED",
-            "429",
             "NOT_FOUND",
             "404",
             "UNAUTHENTICATED",
@@ -33,12 +32,13 @@ def _is_non_retryable(err: Exception) -> bool:
 
 def invoke_with_retry(
     invoke_fn: Callable[[], T],
-    fallback_fn: Callable[[], T],
+    fallback_fn: Callable[[], T] | None = None,
     retries: int = 1,
 ) -> T:
     """Invoke a function that returns a Pydantic model. Retry on exception.
 
-    If it fails after `retries`, returns the result of `fallback_fn()`.
+    If it fails after `retries`, returns the result of `fallback_fn()` if provided,
+    otherwise raises the exception.
     """
     last_err: Exception | None = None
     attempts = retries + 1
@@ -50,10 +50,15 @@ def invoke_with_retry(
             if _is_non_retryable(e):
                 break
 
+    if fallback_fn is not None:
+        if last_err:
+            logger.warning(
+                "LLM invocation failed after %s attempt(s); using fallback: %s",
+                attempt + 1,
+                last_err,
+            )
+        return fallback_fn()
+
     if last_err:
-        logger.warning(
-            "LLM invocation failed after %s attempt(s); using fallback: %s",
-            attempt + 1,
-            last_err,
-        )
-    return fallback_fn()
+        raise last_err
+    raise RuntimeError("LLM invocation failed")
