@@ -5,7 +5,7 @@ import { useAppTheme } from '../hooks/useAppTheme';
 import { useRouter } from 'expo-router';
 import { useStatus } from '../contexts/StatusContext';
 
-export function Map({ mapStyle, incidents = [], mapRef, onIncidentPress, showHeatmap = false }: { mapStyle: any, incidents?: any[], mapRef?: any, onIncidentPress?: (inc: any) => void, showHeatmap?: boolean }) {
+export function Map({ mapStyle, incidents = [], mapRef, onIncidentPress, selectedIncidentId, showHeatmap = false }: { mapStyle: any, incidents?: any[], mapRef?: any, onIncidentPress?: (inc: any) => void, selectedIncidentId?: string, showHeatmap?: boolean }) {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const styles = makeStyles(colors, isDark);

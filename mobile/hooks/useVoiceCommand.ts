@@ -13,7 +13,7 @@ export interface VoiceCommandResponse {
 
 export interface VoiceCommandCallbacks {
   /** Called after a successful ingest intent so the caller can refresh their list */
-  onIngestSuccess?: () => void;
+  onIngestSuccess?: (res?: any) => void;
   /** Called after any successful command with the full response */
   onSuccess?: (res: VoiceCommandResponse) => void;
 }

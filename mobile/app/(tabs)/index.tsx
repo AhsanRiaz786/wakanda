@@ -139,7 +139,7 @@ export default function MapDashboardScreen() {
       setPlanId(id);
       
       if (plan.trace_logs && Array.isArray(plan.trace_logs)) {
-        setTraceLogs(prev => [...prev, ...plan.trace_logs, 'Plan successfully generated and deployed.']);
+        setTraceLogs(prev => [...prev, ...(plan.trace_logs as string[]), 'Plan successfully generated and deployed.']);
       }
       
       await fetchIncidents();

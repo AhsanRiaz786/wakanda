@@ -1,4 +1,4 @@
-# Fix API Errors and Implement Multi-Tiered Fallback
+# Fix API Errors, Implement Fallback, and Configure APK & Branding
 
 - `[x]` Fix `422 Unprocessable Entity` on ingest
   - `[x]` Modify `mobile/app/(tabs)/index.tsx` (Chaos Mode payload)
@@ -8,6 +8,21 @@
   - `[x]` Modify `app/llm/groq_provider.py` (Remove local fallback)
   - `[x]` Modify `app/llm/gemini_provider.py` (Remove local fallback)
   - `[x]` Modify `app/llm/factory.py` (Implement and wire `FailoverLLMProvider`)
-- `[x]` Verification
-  - `[x]` Run `smoke_test.sh`
-  - `[x]` Update Walkthrough
+- `[x]` Wakanda Mobile App Branding & UI Renaming
+  - `[x]` Update app name, slug, scheme, and adaptive icon bg to dark-mode `#09090B` in `app.json`
+  - `[x]` Rename "CityIRA" UI references to "Wakanda" on the Settings screen
+  - `[x]` Integrate generated high-fidelity app icon and dark-mode splash screen
+- `[x]` Fix Fallback Endpoint & EAS Build Configuration
+  - `[x]` Change _layout.tsx fallback from localhost to live Render URL
+  - `[x]` Create `eas.json` to define Android preview APK building profile
+- `[x]` Perfect Code Quality (TypeScript Fixes)
+  - `[x]` Resolve layout segment tuple typescript type check mismatch
+  - `[x]` Cast plan trace logs spreading correctly as string arrays
+  - `[x]` Expose `selectedIncidentId` prop on Map component interface
+  - `[x]` Apply safe navigation, casting, and double-negation checks inside `incident/[id].tsx`
+  - `[x]` Cast ExternalLink route Href to `any` to satisfy expo router
+  - `[x]` Fix VoiceCommandButton vision callback argument types
+- `[x]` Verification & Trace Submissions
+  - `[x]` Run `npx tsc --noEmit` and confirm 100% typescript compliance
+  - `[x]` Copy current session and teammate trace files into `Antigravity_Submission_Proof/raw_logs/`
+  - `[x]` Add changes, commit, and push to final remote branch

@@ -7,10 +7,11 @@ export default function TabLayout() {
   const segments = useSegments();
 
   let activeTab: 'Map' | 'Incidents' | 'Report' | 'Trace' | 'Settings' = 'Map';
-  if (segments.includes('incidents')) activeTab = 'Incidents';
-  else if (segments.includes('report')) activeTab = 'Report';
-  else if (segments.includes('trace')) activeTab = 'Trace';
-  else if (segments.includes('settings')) activeTab = 'Settings';
+  const segList = segments as string[];
+  if (segList.includes('incidents')) activeTab = 'Incidents';
+  else if (segList.includes('report')) activeTab = 'Report';
+  else if (segList.includes('trace')) activeTab = 'Trace';
+  else if (segList.includes('settings')) activeTab = 'Settings';
 
   return (
     <Tabs

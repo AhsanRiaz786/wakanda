@@ -66,7 +66,7 @@ function RootLayoutNav() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
       try {
-        const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000/v1';
+        const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://wakanda-backend.onrender.com/v1';
         const res = await fetch(`${API_BASE}/health`, { signal: controller.signal });
         clearTimeout(timeout);
         if (!cancelled) {

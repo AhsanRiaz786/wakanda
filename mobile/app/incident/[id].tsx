@@ -164,7 +164,7 @@ export default function IncidentDetailScreen() {
               <MapPin size={14} color={colors.textDim} strokeWidth={2} />
               <Typography variant="body" color={colors.textMuted} style={{ fontSize: 12 }}>
                 {(incident?.coordinates as any)?.lat
-                  ? `${(incident.coordinates as any).lat.toFixed(4)}°N, ${(incident.coordinates as any).lng.toFixed(4)}°E`
+                  ? `${((incident?.coordinates as any)?.lat as number).toFixed(4)}°N, ${((incident?.coordinates as any)?.lng as number).toFixed(4)}°E`
                   : 'Location unspecified'}
               </Typography>
             </View>
@@ -206,7 +206,7 @@ export default function IncidentDetailScreen() {
               <Typography variant="mono" style={styles.infoCellK}>District</Typography>
               <Typography variant="body" style={styles.infoCellV}>
                 {(incident?.coordinates as any)?.lat
-                  ? `${(incident.coordinates as any).lat.toFixed(2)}°N`
+                  ? `${((incident?.coordinates as any)?.lat as number).toFixed(2)}°N`
                   : 'Islamabad'}
               </Typography>
             </View>
@@ -225,11 +225,11 @@ export default function IncidentDetailScreen() {
           <Typography variant="body" color={colors.textMuted} style={{ fontSize: 14, lineHeight: 22 }}>
             {String(incident?.description || 'No description provided.')}
           </Typography>
-          {incident?.classificationRationale && (
+          {!!incident?.classificationRationale && (
             <View style={styles.rationaleBox}>
               <Typography variant="body" color={colors.low} style={{ fontSize: 12, lineHeight: 18 }}>
                 <Typography variant="label" color={colors.low} style={{ fontWeight: '700' }}>AI RATIONALE: </Typography>
-                {String(incident.classificationRationale)}
+                {String(incident?.classificationRationale)}
               </Typography>
             </View>
           )}

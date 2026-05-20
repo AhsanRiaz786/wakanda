@@ -169,7 +169,7 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.aboutRow}>
             <Info size={16} color={colors.textMuted} />
             <Typography variant="body" color={colors.textMuted} style={{ flex: 1, marginLeft: 12, fontSize: 14 }}>
-              CityIRA — Google Antigravity Hackathon
+              Wakanda — Google Antigravity Hackathon
             </Typography>
             <Typography variant="mono" color={colors.textDim} style={{ fontSize: 11 }}>v1.0.0</Typography>
           </TouchableOpacity>

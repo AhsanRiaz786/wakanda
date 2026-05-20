@@ -1,64 +1,136 @@
-# Restrict Voice & Camera Buttons to the Report Tab Only
+# CityIRA — APK Build & Branding Plan
 
-## Problem
+## App Quality Audit
 
-The `VoiceCommandButton` (which renders both the 🎙 Mic and 📷 Camera floating action buttons) is mounted globally in `app/(tabs)/_layout.tsx`. This means it floats in the bottom-right corner on **every single tab** — the Map, Incidents list, Trace, and Settings — which is bad UX. These controls are only relevant when a user wants to file a report.
+Before building, here is an honest assessment against typical hackathon judging criteria:
 
-## Proposed Solution
+| Criteria | Status | Notes |
+|---|---|---|
+| **Core Functionality** | ✅ | Incident ingest (text/voice/camera), live map, AI plan, trace |
+| **AI Integration** | ✅ | Multi-tier LLM failover (Groq → Groq 70B → Gemini → Mock) |
+| **Real-time Feed** | ✅ | Incidents auto-refresh on tab focus |
+| **Deployed Backend** | ✅ | `wakanda-backend.onrender.com` live and healthy |
+| **Voice Input** | ✅ | Now properly scoped to Report screen only |
+| **Camera / Vision** | ✅ | Image attach + vision pipeline in Report screen |
+| **UX Consistency** | ✅ | Voice/camera removed from all tabs except Report |
+| **App Name/Icon** | ⚠️ | Currently placeholder icon + named "CityIRA" — needs update |
+| **Splash Screen** | ⚠️ | Default expo splash — needs branded version |
+| **APK** | ❌ | Not built yet — requires EAS Build |
+| **Backend health fallback** | ✅ | Always falls back to `localhost` in dev, Render in prod |
 
-Two-phase change:
+---
 
-### Phase 1 — Remove the Global Floating Button
+## Open Questions
 
-Remove `<VoiceCommandButton>` from `_layout.tsx` entirely. It must no longer be rendered globally in the tab bar.
+> [!IMPORTANT]
+> **App name**: The project is named `wakanda` in the repo but the app displays `CityIRA`. Which name should appear on the phone home screen?
+> - Option A: **CityIRA** (current, matches the backend service name)
+> - Option B: **Wakanda** (repo name)
+>
+> Currently proceeding with **CityIRA** as it matches the backend and docs.
 
-### Phase 2 — Integrate Inline into the Report Screen
-
-Instead of a floating overlay, the Mic and Camera inputs will become **first-class UI elements** inside `report.tsx`, sitting consistently within the page layout alongside the existing text input. This makes the Report screen the single, clean entry point for all three input methods:
-
-1. 📝 **Text** – existing textarea  
-2. 🎙 **Voice** – inline mic button that expands into a recording bar  
-3. 📷 **Camera/Gallery** – inline camera button that triggers the vision pipeline
+> [!IMPORTANT]
+> **EAS Account**: Building an APK via EAS requires an Expo account and `eas-cli`.
+> You will need to run `eas login` once with your Expo credentials.
+> If you don't have an account, create one free at https://expo.dev
 
 ---
 
 ## Proposed Changes
 
-### [MODIFY] [_layout.tsx](file:///d:/Documents/Project/CityIncidentWorkspace/wakanda/mobile/app/(tabs)/_layout.tsx)
-- Remove the `VoiceCommandButton` import and its JSX render inside the `tabBar` prop.
-- Keep the `handleIngestSuccess` callback logic but pass it down (or handle inline in `report.tsx`).
+### 1. Icon & Splash Screen
+#### [MODIFY] assets/images/icon.png
+Replace the blank placeholder with the generated branded icon (dark bg, green shield + city skyline).
+
+#### [MODIFY] assets/images/adaptive-icon.png
+Same icon, used on Android home screen adaptive icon foreground.
+
+#### [MODIFY] assets/images/splash-icon.png
+Replace with the branded splash image (dark bg, centered logo + CityIRA text + tagline).
 
 ---
 
-### [MODIFY] [report.tsx](file:///d:/Documents/Project/CityIncidentWorkspace/wakanda/mobile/app/(tabs)/report.tsx)
-Redesign to feature three clearly labelled input method sections:
+### 2. app.json — Branding & Android Config
+#### [MODIFY] [app.json](file:///d:/Documents/Project/CityIncidentWorkspace/wakanda/mobile/app.json)
 
-```
-┌────────────────────────────────┐
-│  📍 Location Row               │
-├────────────────────────────────┤
-│  OBSERVATION                   │
-│  [ Text area input           ] │
-├────────────────────────────────┤
-│  VOICE INPUT                   │
-│  [ 🎙 Mic button + wave bar  ] │
-├────────────────────────────────┤
-│  ATTACH MEDIA                  │
-│  [ 📷 Camera ]  [ 🖼 Gallery ] │
-├────────────────────────────────┤
-│  [ Submit Field Report       ] │
-└────────────────────────────────┘
+Key changes:
+```json
+{
+  "expo": {
+    "name": "CityIRA",
+    "slug": "cityira",
+    "splash": {
+      "backgroundColor": "#09090B"   // dark background to match branded splash
+    },
+    "android": {
+      "package": "com.cityira.app",  // required for APK
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#09090B"
+      }
+    }
+  }
+}
 ```
 
-- Inline the entire `useVoiceCommand` hook logic directly into `report.tsx`.
-- Render the recording timer bar and waveform **inline** (not floating).
-- On ingest success from voice, show the same green confirmation banner already used by text submit.
-- Camera/Gallery buttons remain as-is but move to be part of the inline layout (they already exist here, so just clean up the duplication from `VoiceCommandButton`).
+---
+
+### 3. EAS Build Setup
+#### [NEW] eas.json
+```json
+{
+  "cli": { "version": ">= 16.0.0" },
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  }
+}
+```
+
+---
+
+### 4. _layout.tsx — Fix Hardcoded localhost in Health Check
+#### [MODIFY] [_layout.tsx](file:///d:/Documents/Project/CityIncidentWorkspace/wakanda/mobile/app/_layout.tsx)
+The `RootLayoutNav` health check still has `'http://localhost:8000/v1'` as fallback.
+Change to `'https://wakanda-backend.onrender.com/v1'`.
+
+---
+
+## Build Steps (run in order)
+
+```bash
+# 1. Install EAS CLI globally
+npm install -g eas-cli
+
+# 2. Login to your Expo account
+eas login
+
+# 3. Configure the project (run once — links to your Expo account)
+cd mobile
+eas build:configure
+
+# 4. Build the APK (cloud build — no Android Studio needed)
+eas build --platform android --profile preview
+```
+
+The build runs in Expo's cloud (~10-15 min). When done, a download link for the `.apk` is provided.
 
 ---
 
 ## Verification Plan
 
-1. Launch the app and verify the Mic/Camera FABs are **gone** from the Map, Incidents, Trace and Settings tabs.
-2. Navigate to Report tab and verify all three input methods (text, voice, camera) work correctly and display confirmation on success.
-3. Confirm that the layout is visually consistent and nothing overlaps the bottom nav.
+1. Install APK on a physical Android device.
+2. Confirm app name shows "CityIRA" on home screen.
+3. Confirm branded icon and splash screen appear correctly.
+4. Open app → verify backend health chip shows "Backend Connected" (Render).
+5. Navigate all 5 tabs — confirm NO floating voice/camera buttons except on Report.
+6. Submit a test incident via text, voice, and camera — all should succeed against the live Render backend.
+7. Run "Autonomous Plan" — verify it succeeds with LLM fallover chain.
